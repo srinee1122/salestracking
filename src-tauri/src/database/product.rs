@@ -88,3 +88,4 @@ pub fn get_products(conn: State<'_, Mutex<Connection>>) -> Result<Vec<Product>, 
 
     Ok(result)
 }
+//hekkww
