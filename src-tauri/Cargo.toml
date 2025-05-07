@@ -1,0 +1,34 @@
+[package]
+name = "salestracking"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "salestracking_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+# Corrected Version: Using the suggested pre-release
+tauri-build = { version = "2.0.0-rc.13", features = [] }
+
+[dependencies]
+# Corrected Version: Matching the tauri-build version
+tauri = { version = "2.0.0-rc.13", features = [] } # Ensure features are empty unless you need specific ones like "shell-open-api"
+
+# Other dependencies remain the same
+tauri-plugin-opener = "2" # This might require a Tauri v2 compatible version, check its documentation if issues arise
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.35", features = ["bundled"] }
+
+# If you are using tauri-plugin-opener, you might need to enable the corresponding feature in tauri
+# For example, if opener needs the shell open API:
+# tauri = { version = "2.0.0-rc.13", features = ["shell-open-api"] }
+# Check the documentation for tauri-plugin-opener v2 compatibility with Tauri v2 RCs.

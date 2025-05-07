@@ -1,0 +1,34 @@
+
+🧠 GIT CHEAT SHEET – Local Version Control (No GitHub)
+
+✅ INITIAL SETUP (Run Once)
+----------------------------------
+git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+
+✅ SAVE CHANGES (Every time you complete a task)
+----------------------------------
+git add .
+git commit -m "Descriptive message about what changed"
+
+✅ VIEW HISTORY
+----------------------------------
+git log --oneline
+
+✅ RESTORE TO A PREVIOUS COMMIT
+----------------------------------
+git checkout <commit-id> .
+
+✅ OPTIONAL: CREATE BRANCH (for experimenting safely)
+----------------------------------
+git checkout -b feature-name
+# Work and commit on new branch
+git switch main  # Switch back to main
+
+✅ BACKUP YOUR WORK
+----------------------------------
+- ZIP this folder manually
+- OR push to GitHub (when you're ready)
+
+📌 You can always run Git from the VS Code terminal:
+→ Terminal → New Terminal → run `git ...`

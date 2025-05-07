@@ -1,0 +1,27 @@
+# Node dependencies
+node_modules/
+dist/
+.temp/
+
+# Tauri build
+/src-tauri/target/
+src-tauri/bundle/
+src-tauri/.cargo/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs & editors
+.vscode/
+.idea/
+*.sw?
+*.sublime*
+
+# Logs & local env
+*.log
+.env
+.env.local
+
+# Rust artifacts
+Cargo.lock
