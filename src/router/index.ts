@@ -8,6 +8,7 @@ import ProductsView from '../views/ProductsView.vue';
 import ProductDetailView from '../views/ProductDetailView.vue';  
 import SalesEntryView from '../views/SalesentryView.vue';
 import TargetCampaignView from '../views/TargetCampaignView.vue';
+import CampaignProgressView from '../views/CampaignProgressView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -35,6 +36,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/targetcampaign',
     name: 'targetcampaign',
     component: TargetCampaignView
+  },
+  {
+    path: '/campaign/:id',
+    name: 'CampaignProgress',
+    component: CampaignProgressView
   }
 ];
 

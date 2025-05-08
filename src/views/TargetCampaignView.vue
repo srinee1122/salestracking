@@ -2,6 +2,17 @@
   <div class="p-6 sm:p-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">🎯 Target Campaign Management</h1>
 
+    <!-- Active Campaigns Section -->
+    <section v-if="activeCampaigns.length" class="bg-white p-6 rounded-lg shadow mb-8">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">📋 Active Campaigns</h2>
+      <ul class="list-disc list-inside text-sm text-gray-700">
+        <li v-for="campaign in activeCampaigns" :key="campaign.id">
+          {{ campaign.name }} ({{ campaign.brand }}) — {{ campaign.start_date }} to {{ campaign.end_date }}
+          <button class="btn-outline ml-4" @click="goToCampaignProgress(campaign.id)">View Progress</button>
+        </li>
+      </ul>
+    </section>
+
     <!-- Step 1: Campaign Info -->
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Campaign Info</h2>
@@ -101,10 +112,15 @@ import {
   apiSetCampaignProducts,
   apiAddTargetAllocation,
   apiAddTargetTier,
+  apiGetCampaigns,
   TargetCampaign
 } from '@/model/incentives';
 import { apiFetchProducts } from '@/model/products';
 import { apiFetchSalespeople } from '@/model/api';
+import { useRouter } from 'vue-router';
+const router = useRouter();
+
+
 
 const campaignForm = ref({ name: '', brand: '', start_date: '', end_date: '' });
 const products = ref<any[]>([]);
@@ -114,6 +130,7 @@ const salesTargets = ref<Record<number, number>>({});
 const baseRewards = ref<Record<number, number>>({});
 const tierForm = ref({ multiplier: 1, reward_per_unit: 0, notes: '' });
 const tierList = ref<any[]>([]);
+const activeCampaigns = ref<TargetCampaign[]>([]);
 
 const uniqueBrands = computed(() => {
   const seen = new Set();
@@ -134,6 +151,11 @@ const assignedProductList = computed(() => {
   return products.value.filter(p => selectedProducts.value.includes(p.id));
 });
 
+function goToCampaignProgress(campaignId: number) {
+  router.push({ name: 'CampaignProgress', params: { id: campaignId } });
+}
+
+
 function addTier() {
   tierList.value.push({ ...tierForm.value });
   tierForm.value = { multiplier: 1, reward_per_unit: 0, notes: '' };
@@ -142,7 +164,7 @@ function addTier() {
 async function saveFullCampaign() {
   try {
     await apiCreateCampaign(campaignForm.value);
-    const latestCampaigns = await import('@/model/incentives').then(mod => mod.apiGetCampaigns());
+    const latestCampaigns = await apiGetCampaigns();
     const newCampaign = latestCampaigns[latestCampaigns.length - 1];
     if (!newCampaign) return;
     await apiSetCampaignProducts(newCampaign.id, selectedProducts.value);
@@ -167,29 +189,21 @@ async function saveFullCampaign() {
       });
     }
     alert('✅ Full campaign created successfully!');
+    await loadActiveCampaigns();
   } catch (err) {
     console.error(err);
     alert('❌ Failed to save campaign.');
   }
 }
 
+async function loadActiveCampaigns() {
+  const all = await apiGetCampaigns();
+  activeCampaigns.value = all.filter(c => c.is_active);
+}
+
 onMounted(async () => {
   products.value = await apiFetchProducts();
   salespeople.value = await apiFetchSalespeople();
+  await loadActiveCampaigns();
 });
 </script>
-
-<style scoped>
-.input {
-  @apply w-full px-4 py-2 border rounded shadow-sm;
-}
-.btn-green {
-  @apply bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700;
-}
-.btn-blue {
-  @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
-}
-.btn-outline {
-  @apply border border-gray-400 text-gray-700 px-4 py-2 rounded hover:bg-gray-100;
-}
-</style>
