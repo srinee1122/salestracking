@@ -45,7 +45,7 @@ export async function apiGetCampaigns(): Promise<TargetCampaign[]> {
 }
 
 export async function apiAddTargetAllocation(payload: Omit<TargetAllocation, 'id'>): Promise<void> {
-  await invoke("add_target_allocation", { allocation: payload });
+  await invoke("add_target_allocation", { payload }); // ✅ Matches Rust command
 }
 
 export async function apiAddTargetTier(payload: Omit<TargetTier, 'id'>): Promise<void> {
@@ -53,5 +53,7 @@ export async function apiAddTargetTier(payload: Omit<TargetTier, 'id'>): Promise
 }
 
 export async function apiSetCampaignProducts(campaignId: number, productIds: number[]): Promise<void> {
-  await invoke("set_campaign_products", { campaignId, productIds });
+  await invoke("set_campaign_products", {
+    payload: { campaign_id: campaignId, product_ids: productIds }
+  });
 }

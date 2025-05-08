@@ -102,39 +102,64 @@
   });
   
   function handleCSVUpload(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-  
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
-  
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const row: Record<string, string> = {};
-        headers.forEach((key, idx) => row[key] = values[idx]);
-  
-        const person = salespeople.value.find(p => p.name === row.salesperson);
-        const product = products.value.find(p => p.name === row.product);
-  
-        if (person && product) {
-          await apiAddSaleEntry({
-            salesperson_id: person.id,
-            product_id: product.id,
-            date: row.date,
-            quantity: parseInt(row.quantity),
-            unit_type: row.unit_type.toLowerCase() === 'cartons' ? 'cartons' : 'pieces',
-          });
-        }
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const text = e.target?.result as string;
+    const lines = text.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length < 5) {
+        console.warn(`❌ Row ${i + 1} skipped: Not enough values`);
+        failureCount++;
+        continue;
       }
-  
-      alert("✅ Bulk upload complete!");
-      await loadSalesEntries();
-    };
-    reader.readAsText(file);
-  }
+
+      const row: Record<string, string> = {};
+      headers.forEach((key, idx) => row[key] = values[idx]);
+
+      const person = salespeople.value.find(p => p.name.toLowerCase() === row.salesperson.toLowerCase());
+      const product = products.value.find(p => p.name.toLowerCase() === row.product.toLowerCase());
+
+      if (!person) {
+        console.warn(`⚠️ Row ${i + 1}: Salesperson '${row.salesperson}' not found.`);
+        failureCount++;
+        continue;
+      }
+      if (!product) {
+        console.warn(`⚠️ Row ${i + 1}: Product '${row.product}' not found.`);
+        failureCount++;
+        continue;
+      }
+
+      try {
+        await apiAddSaleEntry({
+          salesperson_id: person.id,
+          product_id: product.id,
+          date: row.date,
+          quantity: parseInt(row.quantity),
+          unit_type: row.unit_type.toLowerCase() === 'cartons' ? 'cartons' : 'pieces',
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`❌ Row ${i + 1} failed:`, error);
+        failureCount++;
+      }
+    }
+
+    alert(`✅ Upload complete: ${successCount} rows added, ${failureCount} rows failed.`);
+    await apiFetchSaleEntries(); // Refresh view
+  };
+
+  reader.readAsText(file);
+}
   
   async function handleSubmit() {
     try {
