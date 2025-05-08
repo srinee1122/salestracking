@@ -21,6 +21,24 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
     )?;
     println!("✅ Table 'salespeople' checked/created.");
 
+
+    // Create sales entry table
+    tx.execute(
+        "CREATE TABLE IF NOT EXISTS sales_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    salesperson_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_type TEXT NOT NULL,
+    FOREIGN KEY (salesperson_id) REFERENCES salespeople(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+        )",
+        [],
+    )?;
+    println!("✅ Table 'salesentry' checked/created.");
+
+
     // Create products table
     tx.execute(
         "CREATE TABLE IF NOT EXISTS products (
@@ -36,6 +54,8 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
         [],
     )?;
     println!("✅ Table 'products' checked/created.");
+
+    
 
     tx.commit()?;
     println!("✅ Database schema initialization complete.");

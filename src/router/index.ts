@@ -5,7 +5,8 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 // Import view components
 import SalespersonView from '../views/SalespersonView.vue';
 import ProductsView from '../views/ProductsView.vue';
-import ProductDetailView from '../views/ProductDetailView.vue'; // 
+import ProductDetailView from '../views/ProductDetailView.vue';  
+import SalesEntryView from '../views/SalesentryView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -19,10 +20,15 @@ const routes: Array<RouteRecordRaw> = [
     component: ProductsView
   },
   {
-    path: '/product-detail',
+    path: '/productdetail',
     name: 'ProductDetail',
     component: ProductDetailView // ✅ New route added
   },
+  {
+    path: '/saleentry',
+    name: 'SaleEntry',
+    component: SalesEntryView
+  }
 ];
 
 const router = createRouter({

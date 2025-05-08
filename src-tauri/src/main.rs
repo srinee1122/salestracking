@@ -4,6 +4,7 @@ mod database;
 use database::db::establish_connection;
 use database::product::{add_product,get_products};
 use database::salesperson::{add_salesperson, get_salespeople};
+use database::sales::{add_sale_entry, get_sales_entries};
 
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
@@ -21,6 +22,8 @@ fn main() {
              add_salesperson,
              get_salespeople,
              get_products,
+             add_sale_entry,
+             get_sales_entries,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

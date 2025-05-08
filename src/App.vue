@@ -19,6 +19,12 @@
                    active-class="bg-indigo-800 font-semibold"
                    exact-active-class="bg-indigo-800 font-semibold"
                    >Products</router-link>
+                   <router-link
+                   to="/saleentry"
+                   class="px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-600 transition duration-150"
+                   active-class="bg-indigo-800 font-semibold"
+                   exact-active-class="bg-indigo-800 font-semibold"
+                   >Sale Entry</router-link>
                  </div>
            </div>
         </div>

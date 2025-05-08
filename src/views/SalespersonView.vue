@@ -102,6 +102,7 @@
   // Import the API functions and types from our model file
   // Make sure the path './model/api' is correct relative to App.vue
   import { apiFetchSalespeople, apiAddSalesperson, Salesperson, AddSalespersonPayload } from '../model/api';
+ 
   
   // --- Reactive State Definition ---
   
@@ -114,6 +115,8 @@
     employeeId: null, // Initialize optional fields to null
     email: null,
   });
+
+  
   
   // Tracks whether an API call is in progress
   const isLoading = ref<boolean>(false);
