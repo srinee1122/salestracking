@@ -7,6 +7,7 @@ import SalespersonView from '../views/SalespersonView.vue';
 import ProductsView from '../views/ProductsView.vue';
 import ProductDetailView from '../views/ProductDetailView.vue';  
 import SalesEntryView from '../views/SalesentryView.vue';
+import TargetCampaignView from '../views/TargetCampaignView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -28,6 +29,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/saleentry',
     name: 'SaleEntry',
     component: SalesEntryView
+  }
+  ,
+  {
+    path: '/targetcampaign',
+    name: 'targetcampaign',
+    component: TargetCampaignView
   }
 ];
 
