@@ -6,10 +6,15 @@
     <section v-if="activeCampaigns.length" class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">📋 Active Campaigns</h2>
       <ul class="list-disc list-inside text-sm text-gray-700">
-        <li v-for="campaign in activeCampaigns" :key="campaign.id">
-          {{ campaign.name }} ({{ campaign.brand }}) — {{ campaign.start_date }} to {{ campaign.end_date }}
-          <button class="btn-outline ml-4" @click="goToCampaignProgress(campaign.id)">View Progress</button>
-        </li>
+<li v-for="campaign in activeCampaigns" :key="campaign.id">
+  {{ campaign.name }} ({{ campaign.brand }}) — {{ campaign.start_date }} to {{ campaign.end_date }}
+  <ul class="ml-4 text-xs text-gray-600">
+    <li v-for="p in campaign.products" :key="p.product_id">
+      • {{ p.product_name }} ({{ p.brand }})
+    </li>
+  </ul>
+  <button class="btn-outline ml-4" @click="goToCampaignProgress(campaign.id)">View Progress</button>
+</li>
       </ul>
     </section>
 
@@ -113,7 +118,8 @@ import {
   apiAddTargetAllocation,
   apiAddTargetTier,
   apiGetCampaigns,
-  TargetCampaign
+  TargetCampaign,
+  apiGetProductsForCampaign 
 } from '@/model/incentives';
 import { apiFetchProducts } from '@/model/products';
 import { apiFetchSalespeople } from '@/model/api';
@@ -207,6 +213,9 @@ async function saveFullCampaign() {
 
 async function loadActiveCampaigns() {
   const all = await apiGetCampaigns();
+  for (const campaign of all) {
+    campaign.products = await apiGetProductsForCampaign(campaign.id);
+  }
   activeCampaigns.value = all.filter(c => c.is_active);
 }
 

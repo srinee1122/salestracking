@@ -243,3 +243,46 @@ pub fn get_target_tiers(
     Ok(tiers)
 }
 
+#[derive(Debug, Serialize)]
+pub struct CampaignProduct {
+    pub id: i32,
+    pub campaign_id: i32,
+    pub product_id: i32,
+    pub product_name: String,
+    pub brand: String,
+}
+
+#[tauri::command]
+pub fn get_products_for_campaign(
+    conn: State<'_, Mutex<Connection>>,
+    campaign_id: i32,
+) -> Result<Vec<CampaignProduct>, String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT cp.id, cp.campaign_id, cp.product_id, p.name, p.brand
+             FROM target_campaign_products cp
+             JOIN products p ON cp.product_id = p.id
+             WHERE cp.campaign_id = ?1",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([campaign_id], |row| {
+            Ok(CampaignProduct {
+                id: row.get(0)?,
+                campaign_id: row.get(1)?,
+                product_id: row.get(2)?,
+                product_name: row.get(3)?,
+                brand: row.get(4)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row.map_err(|e| e.to_string())?);
+    }
+
+    Ok(result)
+}

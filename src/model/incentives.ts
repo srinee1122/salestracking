@@ -12,6 +12,13 @@ export interface TargetCampaign {
   start_date: string;
   end_date: string;
   is_active: boolean;
+  products?: {
+    id: number;
+    campaign_id: number;
+    product_id: number;
+    product_name: string;
+    brand: string;
+  }[];
 }
 
 //products involved for the selected brand
@@ -69,4 +76,8 @@ export async function apiGetTargetAllocations(campaign_id: number): Promise<Targ
 
 export async function apiGetTargetTiers(campaign_id: number): Promise<TargetTier[]> {
   return await invoke("get_target_tiers", { campaignId: campaign_id });
+}
+
+export async function apiGetProductsForCampaign(campaign_id: number): Promise<any[]> {
+  return await invoke("get_products_for_campaign", { campaignId: campaign_id });
 }
