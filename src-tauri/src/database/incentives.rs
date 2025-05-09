@@ -76,6 +76,7 @@ pub struct TargetAllocationPayload {
     pub campaign_id: i32,
     pub salesperson_id: i32,
     pub target_quantity: i32,
+    pub base_reward: f64,
 }
 
 #[tauri::command]
@@ -85,9 +86,14 @@ pub fn add_target_allocation(
 ) -> Result<(), String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO target_allocations (campaign_id, salesperson_id, target_quantity)
-         VALUES (?1, ?2, ?3)",
-        params![payload.campaign_id, payload.salesperson_id, payload.target_quantity],
+        "INSERT INTO target_allocations (campaign_id, salesperson_id, target_quantity, base_reward)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![
+            payload.campaign_id,
+            payload.salesperson_id,
+            payload.target_quantity,
+            payload.base_reward
+        ],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -131,7 +137,6 @@ pub fn set_campaign_products(
 
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    // Remove old entries for this campaign
     tx.execute(
         "DELETE FROM target_campaign_products WHERE campaign_id = ?1",
         params![payload.campaign_id],
@@ -148,5 +153,93 @@ pub fn set_campaign_products(
     }
 
     tx.commit().map_err(|e| e.to_string())?;
-Ok(())
+    Ok(())
 }
+
+#[derive(Debug, Serialize)]
+pub struct TargetAllocation {
+    pub id: i32,
+    pub campaign_id: i32,
+    pub salesperson_id: i32,
+    pub target_quantity: i32,
+    pub base_reward: f64,
+}
+
+#[tauri::command]
+pub fn get_target_allocations(
+    conn: State<'_, Mutex<Connection>>,
+    campaign_id: i32,
+) -> Result<Vec<TargetAllocation>, String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+    println!("🟢 Rust: get_target_allocations called with ID: {}", campaign_id);
+    println!("Rust received campaign_id = {}", campaign_id);
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, campaign_id, salesperson_id, target_quantity, base_reward
+             FROM target_allocations
+             WHERE campaign_id = ?1",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([campaign_id], |row| {
+            Ok(TargetAllocation {
+                id: row.get(0)?,
+                campaign_id: row.get(1)?,
+                salesperson_id: row.get(2)?,
+                target_quantity: row.get(3)?,
+                base_reward: row.get(4)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut result = Vec::new();
+    for row in rows {
+        result.push(row.map_err(|e| e.to_string())?);
+    }
+
+    Ok(result)
+}
+
+#[derive(Debug, Serialize)]
+pub struct TargetTier {
+    pub id: i32,
+    pub campaign_id: i32,
+    pub min_quantity: i32,
+    pub multiplier: f64,
+    pub reward_per_unit: f64,
+    pub notes: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_target_tiers(
+    conn: State<'_, Mutex<Connection>>,
+    campaign_id: i32,
+) -> Result<Vec<TargetTier>, String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    let mut stmt = conn.prepare(
+        "SELECT id, campaign_id, min_quantity, multiplier, reward_per_unit, notes
+         FROM target_tiers
+         WHERE campaign_id = ?1",
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([campaign_id], |row| {
+        Ok(TargetTier {
+            id: row.get(0)?,
+            campaign_id: row.get(1)?,
+            min_quantity: row.get(2)?,
+            multiplier: row.get(3)?,
+            reward_per_unit: row.get(4)?,
+            notes: row.get(5)?,
+        })
+    }).map_err(|e| e.to_string())?;
+
+    let mut tiers = Vec::new();
+    for row in rows {
+        tiers.push(row.map_err(|e| e.to_string())?);
+    }
+
+    Ok(tiers)
+}
+

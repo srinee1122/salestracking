@@ -30,7 +30,7 @@ pub fn add_sale_entry(
     let conn = conn.lock().map_err(|_| "Failed to lock DB".to_string())?;
     println!("📥 Adding sale entry: {:?}", entry);
     conn.execute(
-        "INSERT INTO sales_entries (salesperson_id, date, product_id, quantity, unit_type)
+        "INSERT INTO salesentry  (salesperson_id, date, product_id, quantity, unit_type)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             entry.salesperson_id,
@@ -51,7 +51,7 @@ pub fn get_sales_entries(conn: State<'_, Mutex<Connection>>) -> Result<Vec<SaleE
 
     let mut stmt = conn
         .prepare(
-            "SELECT id, salesperson_id, date, product_id, quantity, unit_type FROM sales_entries",
+            "SELECT id, salesperson_id, date, product_id, quantity, unit_type FROM salesentry ",
         )
         .map_err(|e| e.to_string())?;
 

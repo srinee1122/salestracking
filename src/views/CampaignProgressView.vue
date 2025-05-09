@@ -1,61 +1,97 @@
 <template>
-    <div class="p-6 sm:p-8">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">📊 Campaign Progress</h1>
-  
-      <div v-if="campaign" class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-700">{{ campaign.name }} ({{ campaign.brand }})</h2>
-        <p class="text-gray-600">{{ campaign.start_date }} to {{ campaign.end_date }}</p>
-      </div>
-  
-      <div v-if="progress.length" class="bg-white rounded-lg shadow p-4">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Salesperson</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Target Qty</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Achieved Qty</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="row in progress" :key="row.salesperson">
-              <td class="px-4 py-2 text-sm text-gray-700">{{ row.salesperson }}</td>
-              <td class="px-4 py-2 text-sm text-gray-700">{{ row.target }}</td>
-              <td class="px-4 py-2 text-sm text-gray-700">{{ row.achieved }}</td>
-              <td class="px-4 py-2 text-sm">
-                <span :class="row.achieved >= row.target ? 'text-green-600 font-semibold' : 'text-red-500 font-medium'">
-                  {{ row.achieved >= row.target ? 'Met' : 'Pending' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p v-else class="text-gray-500">No progress data available.</p>
+  <div class="p-6 sm:p-8">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">📈 Campaign Progress</h1>
+
+    <div v-if="campaign" class="mb-6">
+      <h2 class="text-lg font-semibold text-gray-700">{{ campaign.name }} ({{ campaign.brand }})</h2>
+      <p class="text-sm text-gray-600">{{ campaign.start_date }} to {{ campaign.end_date }}</p>
     </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
-  import { useRoute } from 'vue-router';
-  import { apiGetCampaigns } from '@/model/incentives';
-  
-  const route = useRoute();
-  const campaignId = parseInt(route.params.id as string);
-  
-  const campaign = ref<any>(null);
-  const progress = ref<any[]>([]); // Will hold rows: { salesperson, target, achieved }
-  
-  onMounted(async () => {
-    const allCampaigns = await apiGetCampaigns();
-    campaign.value = allCampaigns.find(c => c.id === campaignId);
-  
-    // This would eventually come from a real API call (placeholder for now)
-    progress.value = [
-      { salesperson: 'Arun', target: 100, achieved: 120 },
-      { salesperson: 'Manoj', target: 75, achieved: 65 },
-      { salesperson: 'Vaithi', target: 50, achieved: 50 }
-    ];
+
+    <table class="min-w-full bg-white border rounded shadow">
+      <thead>
+        <tr class="bg-gray-100 text-left text-sm font-semibold text-gray-700">
+          <th class="p-3">Salesperson</th>
+          <th class="p-3">Target</th>
+          <th class="p-3">Achieved</th>
+          <th class="p-3">Base Reward</th>
+          <th class="p-3">Tier</th>
+          <th class="p-3">Total Reward</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="row in progress" :key="row.salesperson_id" class="border-t">
+          <td class="p-3">{{ row.salesperson_name }}</td>
+          <td class="p-3">{{ row.target_quantity }}</td>
+          <td class="p-3">{{ row.achieved_quantity }}</td>
+          <td class="p-3">${{ row.base_reward }}</td>
+          <td class="p-3">x{{ row.multiplier }}</td>
+          <td class="p-3 font-semibold">${{ row.total_reward.toFixed(2) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import {
+  apiGetCampaigns,
+  apiGetTargetAllocations,
+  apiGetTargetTiers
+} from '@/model/incentives';
+import { apiFetchSalespeople } from '@/model/api';
+import { apiFetchSaleEntries } from '@/model/sales';
+
+const route = useRoute();
+const campaign_id  = parseInt(route.params.id as string);
+const campaign = ref<any>(null);
+const progress = ref<any[]>([]);
+
+onMounted(async () => {
+  const campaigns = await apiGetCampaigns();
+  campaign.value = campaigns.find((c) => c.id === campaign_id);
+  const allocations = await apiGetTargetAllocations(campaign_id);
+  const tiers = await apiGetTargetTiers(campaign_id);
+  const sales = await apiFetchSaleEntries();
+  const salespeople = await apiFetchSalespeople();
+
+  const rows = allocations.map((alloc: any) => {
+    const personSales = sales.filter(
+      (s) => s.salesperson_id === alloc.salesperson_id && s.date >= campaign.value.start_date && s.date <= campaign.value.end_date
+    );
+    const totalQty = personSales.reduce((sum, s) => sum + s.quantity, 0);
+
+    const tier = [...tiers].reverse().find((t) => totalQty >= t.min_quantity) || { multiplier: 1, reward_per_unit: alloc.base_reward };
+    const multiplier = tier.multiplier || 1;
+    const rewardPerUnit = tier.reward_per_unit;
+    const totalReward = totalQty * rewardPerUnit;
+
+    return {
+      salesperson_id: alloc.salesperson_id,
+      salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
+      target_quantity: alloc.target_quantity,
+      achieved_quantity: totalQty,
+      base_reward: alloc.base_reward,
+      multiplier,
+      total_reward: totalReward
+    };
   });
-  </script>
-  
+
+  progress.value = rows;
+});
+</script>
+
+<style scoped>
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+th {
+  background-color: #f4f4f4;
+}
+</style>

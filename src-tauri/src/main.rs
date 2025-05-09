@@ -5,7 +5,7 @@ use database::db::establish_connection;
 use database::product::{add_product,get_products};
 use database::salesperson::{add_salesperson, get_salespeople};
 use database::sales::{add_sale_entry, get_sales_entries};
-use database::incentives::{add_target_campaign, get_target_campaigns, add_target_allocation, add_target_tier, set_campaign_products};
+use database::incentives::{add_target_campaign, get_target_campaigns, add_target_allocation, add_target_tier, set_campaign_products, get_target_allocations, get_target_tiers};
 
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
@@ -22,20 +22,18 @@ fn main() {
              add_product,
              add_salesperson,
              get_salespeople,
-             get_products,
              add_sale_entry,
              get_sales_entries,
              add_product,
              get_products,
-             add_salesperson,
-             get_salespeople,
-             add_sale_entry,
              get_sales_entries,
              add_target_campaign,
              get_target_campaigns,
+             get_target_allocations,
              add_target_allocation,
              add_target_tier,
-             set_campaign_products
+             set_campaign_products,
+             get_target_tiers,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

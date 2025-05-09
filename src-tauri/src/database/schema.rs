@@ -53,57 +53,63 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
     )?;
     println!("✅ Table 'salesentry' checked/created.");
 
-    // Create target_campaigns table
-tx.execute(
-    "CREATE TABLE IF NOT EXISTS target_campaigns (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        brand TEXT NOT NULL,
-        start_date TEXT NOT NULL,
-        end_date TEXT NOT NULL,
-        is_active INTEGER DEFAULT 1 NOT NULL
-    )",
-    [],
-)?;
+    // Target campaigns table
+    tx.execute(
+        "CREATE TABLE IF NOT EXISTS target_campaigns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            brand TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1 NOT NULL
+        )",
+        [],
+    )?;
+    println!("✅ Table 'target_campaigns' checked/created.");
 
-// Create target_campaign_products table
-tx.execute(
-    "CREATE TABLE IF NOT EXISTS target_campaign_products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        campaign_id INTEGER NOT NULL,
-        product_id INTEGER NOT NULL,
-        FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id),
-        FOREIGN KEY (product_id) REFERENCES products(id)
-    )",
-    [],
-)?;
+    // Target campaign products table
+    tx.execute(
+        "CREATE TABLE IF NOT EXISTS target_campaign_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )",
+        [],
+    )?;
+    println!("✅ Table 'target_campaign_products' checked/created.");
 
-// Create target_allocations table with base_reward
-tx.execute(
-    "CREATE TABLE IF NOT EXISTS target_allocations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        campaign_id INTEGER NOT NULL,
-        salesperson_id INTEGER NOT NULL,
-        target_quantity INTEGER NOT NULL,
-        base_reward REAL NOT NULL DEFAULT 0,
-        FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id),
-        FOREIGN KEY (salesperson_id) REFERENCES salespeople(id)
-    )",
-    [],
-)?;
+    // Target allocations table
+    tx.execute(
+        "CREATE TABLE IF NOT EXISTS target_allocations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id INTEGER NOT NULL,
+            salesperson_id INTEGER NOT NULL,
+            target_quantity INTEGER NOT NULL,
+            base_reward REAL NOT NULL DEFAULT 0,
+            FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id),
+            FOREIGN KEY (salesperson_id) REFERENCES salespeople(id)
+        )",
+        [],
+    )?;
+    println!("✅ Table 'target_allocations' checked/created.");
 
-// Create target_tiers table with multiplier
-tx.execute(
-    "CREATE TABLE IF NOT EXISTS target_tiers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        campaign_id INTEGER NOT NULL,
-        multiplier REAL NOT NULL,
-        reward_per_unit REAL NOT NULL,
-        notes TEXT,
-        FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id)
-    )",
-    [],
-)?;
+    // Target tiers table
+    tx.execute(
+        "CREATE TABLE IF NOT EXISTS target_tiers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id INTEGER NOT NULL,
+            min_quantity INTEGER NOT NULL,
+            multiplier REAL NOT NULL,
+            reward_per_unit REAL NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id)
+        )",
+        [],
+    )?;
+    println!("✅ Table 'target_tiers' checked/created.");
+
     tx.commit()?;
     println!("✅ Database schema initialization complete.");
 

@@ -128,7 +128,7 @@ const salespeople = ref<any[]>([]);
 const selectedProducts = ref<number[]>([]);
 const salesTargets = ref<Record<number, number>>({});
 const baseRewards = ref<Record<number, number>>({});
-const tierForm = ref({ multiplier: 1, reward_per_unit: 0, notes: '' });
+const tierForm = ref({ multiplier: 1, reward_per_unit: 1, notes: '' });
 const tierList = ref<any[]>([]);
 const activeCampaigns = ref<TargetCampaign[]>([]);
 
@@ -151,8 +151,9 @@ const assignedProductList = computed(() => {
   return products.value.filter(p => selectedProducts.value.includes(p.id));
 });
 
-function goToCampaignProgress(campaignId: number) {
-  router.push({ name: 'CampaignProgress', params: { id: campaignId } });
+function goToCampaignProgress(campaign_id: number) {
+  console.log("Navigating to campaign progress for ID:", campaign_id);
+  router.push({ name: 'CampaignProgress', params: { id: campaign_id } });
 }
 
 
@@ -167,7 +168,11 @@ async function saveFullCampaign() {
     const latestCampaigns = await apiGetCampaigns();
     const newCampaign = latestCampaigns[latestCampaigns.length - 1];
     if (!newCampaign) return;
+
+    // Assign selected products to campaign
     await apiSetCampaignProducts(newCampaign.id, selectedProducts.value);
+
+    // Save target allocations (with base reward)
     for (const person of salespeople.value) {
       const qty = salesTargets.value[person.id] || 0;
       const reward = baseRewards.value[person.id] || 0;
@@ -180,14 +185,18 @@ async function saveFullCampaign() {
         });
       }
     }
+
+    // Save incentive tiers
     for (const tier of tierList.value) {
       await apiAddTargetTier({
         campaign_id: newCampaign.id,
-        min_quantity: Math.round(tier.multiplier),
+        min_quantity: tier.min_quantity ?? 0, // ensure it's present
+        multiplier: tier.multiplier,  
         reward_per_unit: tier.reward_per_unit,
         notes: tier.notes
       });
     }
+
     alert('✅ Full campaign created successfully!');
     await loadActiveCampaigns();
   } catch (err) {
