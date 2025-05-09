@@ -164,7 +164,13 @@ function goToCampaignProgress(campaign_id: number) {
 
 
 function addTier() {
-  tierList.value.push({ ...tierForm.value });
+  const safeMultiplier = parseFloat(tierForm.value.multiplier?.toString() || '1');
+  tierList.value.push({
+    multiplier: safeMultiplier,
+    min_quantity: Math.round(safeMultiplier), // ✅ make sure it’s always set
+    reward_per_unit: tierForm.value.reward_per_unit || 0,
+    notes: tierForm.value.notes || ''
+  });
   tierForm.value = { multiplier: 1, reward_per_unit: 0, notes: '' };
 }
 
@@ -193,15 +199,15 @@ async function saveFullCampaign() {
     }
 
     // Save incentive tiers
-    for (const tier of tierList.value) {
-      await apiAddTargetTier({
-        campaign_id: newCampaign.id,
-        min_quantity: tier.min_quantity ?? 0, // ensure it's present
-        multiplier: tier.multiplier,  
-        reward_per_unit: tier.reward_per_unit,
-        notes: tier.notes
-      });
-    }
+for (const tier of tierList.value) {
+  await apiAddTargetTier({
+    campaign_id: newCampaign.id,
+    multiplier: tier.multiplier ?? 1, // <- enforce it
+    min_quantity: tier.min_quantity ?? Math.round(tier.multiplier ?? 1),
+    reward_per_unit: tier.reward_per_unit ?? 0,
+    notes: tier.notes || ''
+  });
+}
 
     alert('✅ Full campaign created successfully!');
     await loadActiveCampaigns();

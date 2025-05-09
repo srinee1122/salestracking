@@ -11,20 +11,24 @@
       <thead>
         <tr class="bg-gray-100 text-left text-sm font-semibold text-gray-700">
           <th class="p-3">Salesperson</th>
+          <th class="p-3">Product</th>
           <th class="p-3">Target</th>
           <th class="p-3">Achieved</th>
           <th class="p-3">Base Reward</th>
           <th class="p-3">Tier</th>
+          <th class="p-3">Tier Label</th>
           <th class="p-3">Total Reward</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in progress" :key="row.salesperson_id" class="border-t">
+        <tr v-for="row in progress" :key="`${row.salesperson_id}-${row.product_id}`" class="border-t">
           <td class="p-3">{{ row.salesperson_name }}</td>
+          <td class="p-3">{{ row.product_name }}</td>
           <td class="p-3">{{ row.target_quantity }}</td>
           <td class="p-3">{{ row.achieved_quantity }}</td>
           <td class="p-3">${{ row.base_reward }}</td>
           <td class="p-3">x{{ row.multiplier }}</td>
+          <td class="p-3">{{ row.tier_label || '—' }}</td>
           <td class="p-3 font-semibold">${{ row.total_reward.toFixed(2) }}</td>
         </tr>
       </tbody>
@@ -38,13 +42,14 @@ import { useRoute } from 'vue-router';
 import {
   apiGetCampaigns,
   apiGetTargetAllocations,
-  apiGetTargetTiers
+  apiGetTargetTiers,
+  apiGetProductsForCampaign
 } from '@/model/incentives';
 import { apiFetchSalespeople } from '@/model/api';
 import { apiFetchSaleEntries } from '@/model/sales';
 
 const route = useRoute();
-const campaign_id  = parseInt(route.params.id as string);
+const campaign_id = parseInt(route.params.id as string);
 const campaign = ref<any>(null);
 const progress = ref<any[]>([]);
 
@@ -55,28 +60,52 @@ onMounted(async () => {
   const tiers = await apiGetTargetTiers(campaign_id);
   const sales = await apiFetchSaleEntries();
   const salespeople = await apiFetchSalespeople();
+  const campaignProducts = await apiGetProductsForCampaign(campaign_id);
 
-  const rows = allocations.map((alloc: any) => {
-    const personSales = sales.filter(
-      (s) => s.salesperson_id === alloc.salesperson_id && s.date >= campaign.value.start_date && s.date <= campaign.value.end_date
-    );
-    const totalQty = personSales.reduce((sum, s) => sum + s.quantity, 0);
+  const rows: any[] = [];
 
-    const tier = [...tiers].reverse().find((t) => totalQty >= t.min_quantity) || { multiplier: 1, reward_per_unit: alloc.base_reward };
-    const multiplier = tier.multiplier || 1;
-    const rewardPerUnit = tier.reward_per_unit;
-    const totalReward = totalQty * rewardPerUnit;
+  for (const alloc of allocations) {
+    for (const product of campaignProducts) {
+      const productSales = sales.filter(
+        (s) =>
+          s.salesperson_id === alloc.salesperson_id &&
+          s.product_id === product.product_id &&
+          s.date >= campaign.value.start_date &&
+          s.date <= campaign.value.end_date
+      );
 
-    return {
-      salesperson_id: alloc.salesperson_id,
-      salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
-      target_quantity: alloc.target_quantity,
-      achieved_quantity: totalQty,
-      base_reward: alloc.base_reward,
-      multiplier,
-      total_reward: totalReward
-    };
-  });
+      const totalQty = productSales.reduce((sum, s) => sum + s.quantity, 0);
+      const achievedRatio = totalQty / alloc.target_quantity;
+
+      // 🚫 Skip if salesperson did not meet the target
+      if (achievedRatio < 1) continue;
+
+      // ✅ Find highest tier met by achieved ratio
+      const tier = [...tiers]
+        .sort((a, b) => b.multiplier - a.multiplier)
+        .find((t) => achievedRatio >= t.multiplier) || {
+          multiplier: 1,
+          reward_per_unit: alloc.base_reward,
+          notes: '',
+        };
+
+      const rewardPerUnit = tier.reward_per_unit;
+      const totalReward = totalQty * rewardPerUnit;
+
+      rows.push({
+        salesperson_id: alloc.salesperson_id,
+        salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
+        product_id: product.product_id,
+        product_name: product.name,
+        target_quantity: alloc.target_quantity,
+        achieved_quantity: totalQty,
+        base_reward: alloc.base_reward,
+        multiplier: tier.multiplier,
+        tier_label: tier.notes,
+        total_reward: totalReward
+      });
+    }
+  }
 
   progress.value = rows;
 });
