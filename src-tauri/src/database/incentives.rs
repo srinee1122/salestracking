@@ -36,6 +36,7 @@ pub fn add_target_campaign(
             campaign.name,
             campaign.brand,
             campaign.start_date,
+            
             campaign.end_date
         ],
     )
@@ -103,6 +104,7 @@ pub fn add_target_allocation(
 pub struct TargetTierPayload {
     pub campaign_id: i32,
     pub min_quantity: i32,
+    pub multiplier: f64, // ✅ Add this line
     pub reward_per_unit: f64,
     pub notes: Option<String>,
 }
@@ -114,9 +116,9 @@ pub fn add_target_tier(
 ) -> Result<(), String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO target_tiers (campaign_id, min_quantity, reward_per_unit, notes)
-         VALUES (?1, ?2, ?3, ?4)",
-        params![tier.campaign_id, tier.min_quantity, tier.reward_per_unit, tier.notes],
+        "INSERT INTO target_tiers (campaign_id, min_quantity, multiplier, reward_per_unit, notes)
+         VALUES (?1, ?2, ?3, ?4,?5)",
+        params![tier.campaign_id, tier.min_quantity,tier.multiplier, tier.reward_per_unit, tier.notes],
     )
     .map_err(|e| e.to_string())?;
     Ok(())

@@ -65,47 +65,40 @@ onMounted(async () => {
   const rows: any[] = [];
 
   for (const alloc of allocations) {
-    for (const product of campaignProducts) {
-      const productSales = sales.filter(
-        (s) =>
-          s.salesperson_id === alloc.salesperson_id &&
-          s.product_id === product.product_id &&
-          s.date >= campaign.value.start_date &&
-          s.date <= campaign.value.end_date
-      );
+  for (const product of campaignProducts) {
+    const productSales = sales.filter(
+      (s) =>
+        s.salesperson_id === alloc.salesperson_id &&
+        s.product_id === product.product_id &&
+        s.date >= campaign.value.start_date &&
+        s.date <= campaign.value.end_date
+    );
 
-      const totalQty = productSales.reduce((sum, s) => sum + s.quantity, 0);
-      const achievedRatio = totalQty / alloc.target_quantity;
+    const totalQty = productSales.reduce((sum, s) => sum + s.quantity, 0);
 
-      // 🚫 Skip if salesperson did not meet the target
-      if (achievedRatio < 1) continue;
+    // Determine which tier was achieved by checking if totalQty >= multiplier * target_quantity
+    const matchedTier = [...tiers].reverse().find((tier) => {
+      const threshold = tier.multiplier * alloc.target_quantity;
+      return totalQty >= threshold;
+    });
 
-      // ✅ Find highest tier met by achieved ratio
-      const tier = [...tiers]
-        .sort((a, b) => b.multiplier - a.multiplier)
-        .find((t) => achievedRatio >= t.multiplier) || {
-          multiplier: 1,
-          reward_per_unit: alloc.base_reward,
-          notes: '',
-        };
+    const rewardPerUnit = matchedTier ? matchedTier.reward_per_unit : 0;
+    const totalReward = totalQty * rewardPerUnit;
 
-      const rewardPerUnit = tier.reward_per_unit;
-      const totalReward = totalQty * rewardPerUnit;
-
-      rows.push({
-        salesperson_id: alloc.salesperson_id,
-        salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
-        product_id: product.product_id,
-        product_name: product.name,
-        target_quantity: alloc.target_quantity,
-        achieved_quantity: totalQty,
-        base_reward: alloc.base_reward,
-        multiplier: tier.multiplier,
-        tier_label: tier.notes,
-        total_reward: totalReward
-      });
-    }
+    rows.push({
+      salesperson_id: alloc.salesperson_id,
+      salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
+      product_id: product.product_id,
+      product_name: product.name,
+      target_quantity: alloc.target_quantity,
+      achieved_quantity: totalQty,
+      base_reward: alloc.base_reward,
+      multiplier: matchedTier?.multiplier || 1,
+      tier_label: matchedTier?.notes || '—',
+      total_reward: totalReward
+    });
   }
+}
 
   progress.value = rows;
 });

@@ -202,7 +202,7 @@ async function saveFullCampaign() {
 for (const tier of tierList.value) {
   await apiAddTargetTier({
     campaign_id: newCampaign.id,
-    multiplier: tier.multiplier ?? 1, // <- enforce it
+    multiplier: tier.multiplier , // <- enforce it
     min_quantity: tier.min_quantity ?? Math.round(tier.multiplier ?? 1),
     reward_per_unit: tier.reward_per_unit ?? 0,
     notes: tier.notes || ''
