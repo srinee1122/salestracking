@@ -36,13 +36,20 @@
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Campaign Info</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input v-model="campaignForm.name" placeholder="Campaign Name" class="input" required />
-        <select v-model="campaignForm.brand" class="input" required>
+        <input v-model="campaignForm.name"  class="input border border-gray-300 text-center rounded px-3 py-2 w-full ":class="{
+    'border-red-500 border-2': showErrors && !campaignForm.name,
+    'border-gray-300': !(showErrors && !campaignForm.name) }" placeholder="Campaign Name" required/>
+
+        <select v-model="campaignForm.brand" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" required>
           <option disabled value="">Select Brand</option>
           <option v-for="brand in uniqueBrands" :key="brand" :value="brand">{{ brand }}</option>
         </select>
-        <input type="date" v-model="campaignForm.start_date" class="input" required />
-        <input type="date" v-model="campaignForm.end_date" class="input" required />
+        <input type="date" v-model="campaignForm.start_date" class="input  border border-gray-300 text-center rounded px-3 py-2 w-full" :class="{
+    'border-red-500 border-2': showErrors && !campaignForm.start_date,
+    'border-gray-300': !(showErrors && !campaignForm.name) }" required />
+        <input type="date" v-model="campaignForm.end_date" class="input  border border-gray-300 text-center rounded px-3 py-2 w-full" :class="{
+    'border-red-500 border-2': showErrors && !campaignForm.end_date,
+    'border-gray-300': !(showErrors && !campaignForm.name) }"required />
       </div>
     </section>
 
@@ -67,11 +74,17 @@
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">3. Assign Sales Targets</h2>
       <div v-for="person in salespeople" :key="person.id" class="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <label class="font-medium">{{ person.name }}</label>
-        <input type="number" v-model.number="salesTargets[person.id]" placeholder="Min Qty" class="input" />
-        <input type="number" v-model.number="baseRewards[person.id]" placeholder="Base Reward/Unit" class="input" />
+        <label class="font-medium border border-gray-300 text-center rounded px-3 py-2 w-full">{{ person.name }}</label>
+        <input type="number" v-model.number="salesTargets[person.id]" placeholder="Min Qty" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" :class="{
+    'border-red-500 border-2': showErrors && !salesTargets[person.id],
+    'border-gray-300': !(showErrors && !salesTargets[person.id]) }" />
+        <input type="number" v-model.number="baseRewards[person.id]" placeholder="Base Reward/Unit" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" :class="{
+    'border-red-500 border-2': showErrors && !baseRewards[person.id],
+    'border-gray-300': !(showErrors && !baseRewards[person.id]) }"/>
 
-         <select v-model.text = "targetunits[person.id]"  class="input" >
+         <select v-model.text = "targetunits[person.id]"  class="input border border-gray-300 text-center rounded px-3 py-2 w-full" :class="{
+    'border-red-500 border-2': showErrors && !targetunits[person.id],
+    'border-gray-300': !(showErrors && !targetunits[person.id]) }">
           <option disabled value="">Select unit type</option>
   <option value="pieces">Pieces</option>
   <option value="cartons">Cartons</option>
@@ -86,9 +99,9 @@
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">4. Incentive Tiers (Multipliers)</h2>
       <form @submit.prevent="addTier" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        <input type="number" step="0.1" v-model.number="tierForm.multiplier" placeholder="Multiplier (e.g., 1.5)" class="input" required />
-        <input type="number" v-model.number="tierForm.reward_per_unit" placeholder="Reward/Unit" class="input" required />
-        <input type="text" v-model="tierForm.notes" placeholder="Tier Label (optional)" class="input" />
+        <input type="number" step="0.1" v-model.number="tierForm.multiplier" placeholder="Multiplier" class="input border border-gray-300 text-center rounded px-3 py-2 w-full"  required />
+        <input type="number" v-model.number="tierForm.reward_per_unit" placeholder="Reward/Unit" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" required />
+        <input type="text" v-model="tierForm.notes" placeholder="Tier Label (optional)" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" />
         <button type="submit" class="btn-outline sm:col-span-3">➕ Add Incentive Tier</button>
       </form>
       <ul class="list-disc list-inside text-sm text-gray-700">
@@ -161,6 +174,7 @@ const targetunits = ref<Record<string, string>>({});
 const tierForm = ref({ multiplier: 1, reward_per_unit: 1, notes: '' });
 const tierList = ref<any[]>([]);
 const activeCampaigns = ref<TargetCampaign[]>([]);
+const showErrors = ref(false);
 
 const uniqueBrands = computed(() => {
   const seen = new Set();
@@ -204,6 +218,40 @@ function addTier() {
 }
 
 async function saveFullCampaign() {
+  showErrors.value = true;
+  if (!campaignForm.value.name || !campaignForm.value.brand || !campaignForm.value.start_date || !campaignForm.value.end_date) {
+  alert('❌ Please fill all campaign info fields.');
+  return;
+}
+
+if (new Date(campaignForm.value.end_date) <= new Date(campaignForm.value.start_date)) {
+  alert('❌ End date must be after start date.');
+  return;
+}
+
+if (selectedProducts.value.length === 0) {
+  alert('❌ Please select at least one product.');
+  return;
+}
+
+for (const person of salespeople.value) {
+  const qty = salesTargets.value[person.id] || 0;
+  const reward = baseRewards.value[person.id] || 0;
+  const unit = targetunits.value[person.id];
+  if (qty <= 0 || reward <= 0 || (unit !== 'pieces' && unit !== 'cartons')) {
+    alert(`❌ Check target/reward/unit for ${person.name}`);
+    return;
+  }
+}
+
+if (tierList.value.length > 0) {
+  for (const tier of tierList.value) {
+    if (!tier.multiplier || tier.multiplier <= 0 || !tier.reward_per_unit || tier.reward_per_unit <= 0) {
+      alert(`❌ Please ensure all tier fields are filled correctly.`);
+      return;
+    }
+  }
+}
   try {
     await apiCreateCampaign(campaignForm.value);
     const latestCampaigns = await apiGetCampaigns();
