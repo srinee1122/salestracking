@@ -70,9 +70,17 @@
         <label class="font-medium">{{ person.name }}</label>
         <input type="number" v-model.number="salesTargets[person.id]" placeholder="Min Qty" class="input" />
         <input type="number" v-model.number="baseRewards[person.id]" placeholder="Base Reward/Unit" class="input" />
-        <input type="text" v-model.text="targetunits[person.id]" placeholder="pieces or cartons" class="input" />
+
+         <select v-model.text = "targetunits[person.id]"  class="input" >
+          <option disabled value="">Select unit type</option>
+  <option value="pieces">Pieces</option>
+  <option value="cartons">Cartons</option>
+</select> 
       </div>
     </section>
+
+
+ 
 
     <!-- Step 4: Define Tier Multipliers -->
     <section class="bg-white p-6 rounded-lg shadow mb-8">
