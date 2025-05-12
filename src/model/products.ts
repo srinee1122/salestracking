@@ -13,6 +13,7 @@ export interface Product {
   cost_price: number;
   unit_price: number;
   description: string | null;
+  carton_size: number; 
 }
 
 export interface ProductPayload {
@@ -23,6 +24,7 @@ export interface ProductPayload {
   cost_price: number;
   unit_price: number;
   description?: string | null;
+  carton_size: number ; 
 }
 
 // --- API Functions ---

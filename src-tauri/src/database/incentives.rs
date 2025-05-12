@@ -78,6 +78,7 @@ pub struct TargetAllocationPayload {
     pub salesperson_id: i32,
     pub target_quantity: i32,
     pub base_reward: f64,
+    pub target_unit: String,
 }
 
 #[tauri::command]
@@ -87,13 +88,15 @@ pub fn add_target_allocation(
 ) -> Result<(), String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO target_allocations (campaign_id, salesperson_id, target_quantity, base_reward)
-         VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO target_allocations (campaign_id, salesperson_id, target_quantity, base_reward, target_unit)
+         VALUES (?1, ?2, ?3, ?4,?5)",
         params![
             payload.campaign_id,
             payload.salesperson_id,
             payload.target_quantity,
-            payload.base_reward
+            payload.base_reward,
+            payload.target_unit,
+            
         ],
     )
     .map_err(|e| e.to_string())?;
@@ -165,6 +168,7 @@ pub struct TargetAllocation {
     pub salesperson_id: i32,
     pub target_quantity: i32,
     pub base_reward: f64,
+    pub target_unit: String, 
 }
 
 #[tauri::command]
@@ -177,7 +181,7 @@ pub fn get_target_allocations(
     println!("Rust received campaign_id = {}", campaign_id);
     let mut stmt = conn
         .prepare(
-            "SELECT id, campaign_id, salesperson_id, target_quantity, base_reward
+            "SELECT id, campaign_id, salesperson_id, target_quantity, base_reward, target_unit
              FROM target_allocations
              WHERE campaign_id = ?1",
         )
@@ -191,6 +195,7 @@ pub fn get_target_allocations(
                 salesperson_id: row.get(2)?,
                 target_quantity: row.get(3)?,
                 base_reward: row.get(4)?,
+                target_unit: row.get(5)?,
             })
         })
         .map_err(|e| e.to_string())?;

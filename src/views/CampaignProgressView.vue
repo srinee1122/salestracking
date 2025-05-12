@@ -29,7 +29,7 @@
           <td class="p-3">{{ row.achieved_quantity }}</td>
           <td class="p-3">${{ row.base_reward }}</td>
           <td class="p-3">x{{ row.multiplier }}</td>
-          <td class="p-3">{{ row.tier_label || '—' }}</td>
+          <td class="p-3">{{ row.tier_label || '' }}</td>
           <td class="p-3 font-semibold">${{ row.total_reward.toFixed(2) }}</td>
 <td class="p-3 w-48"> <!-- or any fixed width you like -->
   <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">

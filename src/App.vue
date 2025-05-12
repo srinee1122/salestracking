@@ -81,7 +81,8 @@
   
   /* Ensure body has base font if not set elsewhere */
   body {
-     font-family: 'Inter', sans-serif;
-  }
+  background-color: #f9fafb; /* light gray background */
+  font-family: 'Inter', sans-serif;
+}
   </style>
   

@@ -35,6 +35,7 @@ export interface TargetAllocation {
   salesperson_id: number;
   target_quantity: number;
   base_reward: number;
+  target_unit: string;
 }
 
 //include tier if needed

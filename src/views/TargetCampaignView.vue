@@ -3,21 +3,35 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-6">🎯 Target Campaign Management</h1>
 
     <!-- Active Campaigns Section -->
-    <section v-if="activeCampaigns.length" class="bg-white p-6 rounded-lg shadow mb-8">
-      <h2 class="text-lg font-semibold text-gray-700 mb-4">📋 Active Campaigns</h2>
-      <ul class="list-disc list-inside text-sm text-gray-700">
-<li v-for="campaign in activeCampaigns" :key="campaign.id">
-  {{ campaign.name }} ({{ campaign.brand }}) — {{ campaign.start_date }} to {{ campaign.end_date }}
-  <ul class="ml-4 text-xs text-gray-600">
-    <li v-for="p in campaign.products" :key="p.product_id">
-      • {{ p.product_name }} ({{ p.brand }})
-    </li>
-  </ul>
-  <button class="btn-outline ml-4" @click="goToCampaignProgress(campaign.id)">View Progress</button>
-</li>
+<section v-if="activeCampaigns.length" class="mb-6 rounded-xl shadow-md ">
+  <h2 class="text-lg font-semibold text-gray-700 mb-2">📋 Active Campaigns</h2>
+  
+  <div class="overflow-x-auto whitespace-nowrap space-x-4 flex pb-2 px-2">
+    <div
+      v-for="campaign in activeCampaigns"
+      :key="campaign.id"
+      class="inline-block bg-white border rounded-lg shadow-md px-4 py-3 min-w-[250px] mr-2 overflow-hidden"
+    >
+      <div class="font-semibold text-gray-800 truncate">
+        {{ campaign.name }} ({{ campaign.brand }})
+      </div>
+      <div class="text-xs text-gray-500">
+        {{ campaign.start_date }} → {{ campaign.end_date }}
+      </div>
+      <ul class="ext-xs text-gray-600 mt-1 list-disc list-inside break-words whitespace-normal">
+        <li v-for="p in campaign.products" :key="p.product_id">
+          {{ p.product_name }}
+        </li>
       </ul>
-    </section>
-
+      <button
+        class="mt-2 text-sm text-blue-600 underline"
+        @click="goToCampaignProgress(campaign.id)"
+      >
+        View Progress
+      </button>
+    </div>
+  </div>
+</section>
     <!-- Step 1: Campaign Info -->
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Campaign Info</h2>
@@ -56,6 +70,7 @@
         <label class="font-medium">{{ person.name }}</label>
         <input type="number" v-model.number="salesTargets[person.id]" placeholder="Min Qty" class="input" />
         <input type="number" v-model.number="baseRewards[person.id]" placeholder="Base Reward/Unit" class="input" />
+        <input type="text" v-model.text="targetunits[person.id]" placeholder="pieces or cartons" class="input" />
       </div>
     </section>
 
@@ -134,6 +149,7 @@ const salespeople = ref<any[]>([]);
 const selectedProducts = ref<number[]>([]);
 const salesTargets = ref<Record<number, number>>({});
 const baseRewards = ref<Record<number, number>>({});
+const targetunits = ref<Record<string, string>>({});
 const tierForm = ref({ multiplier: 1, reward_per_unit: 1, notes: '' });
 const tierList = ref<any[]>([]);
 const activeCampaigns = ref<TargetCampaign[]>([]);
@@ -164,6 +180,11 @@ function goToCampaignProgress(campaign_id: number) {
 
 
 function addTier() {
+
+   if (tierList.value.length >= 3) {
+    alert('⚠️ You can only add up to 3 tiers.');
+    return;
+  }
   const safeMultiplier = parseFloat(tierForm.value.multiplier?.toString() || '1');
   tierList.value.push({
     multiplier: safeMultiplier,
@@ -188,12 +209,14 @@ async function saveFullCampaign() {
     for (const person of salespeople.value) {
       const qty = salesTargets.value[person.id] || 0;
       const reward = baseRewards.value[person.id] || 0;
+      const tgtunit = targetunits.value[person.id] || "pieces";
       if (qty > 0 && reward > 0) {
         await apiAddTargetAllocation({
           campaign_id: newCampaign.id,
           salesperson_id: person.id,
           target_quantity: qty,
-          base_reward: reward
+          base_reward: reward,
+          target_unit : tgtunit,
         });
       }
     }

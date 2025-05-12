@@ -21,13 +21,13 @@
 
         <!-- Cost Price -->
         <div>
-          <label for="cost-price" class="block text-sm font-medium text-gray-700 mb-1">Cost Price *</label>
+          <label for="cost-price" class="block text-sm font-medium text-gray-700 mb-1">Cost Price (in Pcs) *</label>
           <input type="number" id="cost-price" v-model.number="newProduct.cost_price" required placeholder="Enter cost price" class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
         </div>
 
         <!-- Selling Price -->
         <div>
-          <label for="selling-price" class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
+          <label for="selling-price" class="block text-sm font-medium text-gray-700 mb-1">Selling Price (in Pcs)*</label>
           <input type="number" id="selling-price" v-model.number="newProduct.unit_price" required placeholder="Enter selling price" class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
         </div>
 
@@ -42,6 +42,12 @@
           <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Product Description</label>
           <textarea id="description" v-model="newProduct.description" placeholder="Enter description (optional)" class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm"></textarea>
         </div>
+
+         <div>
+          <label for="carton-size" class="block text-sm font-medium text-gray-700 mb-1">Carton Size Name *</label>
+          <input type="number" id="carton_size" v-model="newProduct.carton_size" required placeholder="Enter Carton Size" class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
+        </div>
+
 
         <!-- Submit Button -->
         <button type="submit" class="mt-2 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
@@ -94,6 +100,7 @@ const newProduct = ref<ProductPayload>({
   cost_price: 0,
   unit_price: 0,
   description: '',
+  carton_size: 1,
 });
 
 const products = ref<Product[]>([]);
@@ -129,6 +136,7 @@ async function handleAddProduct() {
       cost_price: 0,
       unit_price: 0,
       description: '',
+      carton_size: 1,
     };
   } catch (error) {
     console.error('Add failed:', error);

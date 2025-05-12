@@ -15,6 +15,7 @@ pub struct Product {
     pub cost_price: f64,
     pub unit_price: f64,
     pub description: Option<String>,
+    pub carton_size: i32, 
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,6 +27,7 @@ pub struct NewProduct {
     pub cost_price: f64,
     pub unit_price: f64,
     pub description: Option<String>,
+    pub carton_size:i32,
 }
 
 #[tauri::command]
@@ -36,8 +38,8 @@ pub fn add_product(
     let conn = conn.lock().map_err(|e| e.to_string())?;
 
     conn.execute(
-        "INSERT INTO products (sku, name, brand, category, cost_price, unit_price, description)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO products (sku, name, brand, category, cost_price, unit_price, description,carton_size)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7,?8)",
         params![
             product.sku,
             product.name,
@@ -45,7 +47,9 @@ pub fn add_product(
             product.category,
             product.cost_price,
             product.unit_price,
-            product.description
+            product.description,
+            product.carton_size,
+            
         ],
     ).map_err(|e| {
         println!("❌ DB add_product Error: {:?}", e);
@@ -60,7 +64,7 @@ pub fn get_products(conn: State<'_, Mutex<Connection>>) -> Result<Vec<Product>, 
     let conn = conn.lock().map_err(|e| e.to_string())?;
 
     let mut stmt = conn.prepare(
-        "SELECT id, sku, name, brand, category, cost_price, unit_price, description FROM products"
+        "SELECT id, sku, name, brand, category, cost_price, unit_price, description,carton_size FROM products"
     ).map_err(|e| e.to_string())?;
 
     let rows = stmt
@@ -74,6 +78,7 @@ pub fn get_products(conn: State<'_, Mutex<Connection>>) -> Result<Vec<Product>, 
                 cost_price: row.get(5)?,
                 unit_price: row.get(6)?,
                 description: row.get(7).ok(),
+                carton_size: row.get(8)?,
             })
         })
         .map_err(|e| {
