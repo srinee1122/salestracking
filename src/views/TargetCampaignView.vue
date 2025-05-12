@@ -2,36 +2,49 @@
   <div class="p-6 sm:p-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">🎯 Target Campaign Management</h1>
 
-    <!-- Active Campaigns Section -->
-<section v-if="activeCampaigns.length" class="mb-6 rounded-xl shadow-md ">
-  <h2 class="text-lg font-semibold text-gray-700 mb-2">📋 Active Campaigns</h2>
+      <!-- ✅ Button to toggle form -->
   
-  <div class="overflow-x-auto whitespace-nowrap space-x-4 flex pb-2 px-2">
-    <div
-      v-for="campaign in activeCampaigns"
-      :key="campaign.id"
-      class="inline-block bg-white border rounded-lg shadow-md px-4 py-3 min-w-[250px] mr-2 overflow-hidden"
-    >
-      <div class="font-semibold text-gray-800 truncate">
-        {{ campaign.name }} ({{ campaign.brand }})
+
+    <!-- ✅ ACTIVE CAMPAIGNS prominently shown -->
+    <section class="bg-white p-6 rounded-lg shadow mb-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">📋 Active Campaigns</h2>
+      <div class="overflow-x-auto whitespace-nowrap space-x-4 flex pb-2 px-2">
+        <div
+          v-for="campaign in activeCampaigns"
+          :key="campaign.id"
+          class="inline-block bg-gray-100 border rounded-lg shadow-md px-4 py-3 min-w-[280px] mr-2"
+        >
+          <div class="font-semibold text-gray-800 truncate">
+            {{ campaign.name }} ({{ campaign.brand }})
+          </div>
+          <div class="text-xs text-gray-500">
+            {{ campaign.start_date }} → {{ campaign.end_date }}
+          </div>
+          <ul class="text-xs text-gray-600 mt-1 list-disc list-inside whitespace-normal">
+            <li v-for="p in campaign.products" :key="p.product_id">
+              {{ p.product_name }}
+            </li>
+          </ul>
+          <button
+            class="mt-2 text-sm text-blue-600 underline"
+            @click="goToCampaignProgress(campaign.id)"
+          >
+            View Progress
+          </button>
+        </div>
       </div>
-      <div class="text-xs text-gray-500">
-        {{ campaign.start_date }} → {{ campaign.end_date }}
-      </div>
-      <ul class="ext-xs text-gray-600 mt-1 list-disc list-inside break-words whitespace-normal">
-        <li v-for="p in campaign.products" :key="p.product_id">
-          {{ p.product_name }}
-        </li>
-      </ul>
+    </section>
+  <div class="text-right mb-4">
       <button
-        class="mt-2 text-sm text-blue-600 underline"
-        @click="goToCampaignProgress(campaign.id)"
+        class="bg-green-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-md"
+        @click="showForm = !showForm"
       >
-        View Progress
+         Create New Campaign
       </button>
     </div>
-  </div>
-</section>
+        <!-- ✅ Campaign Creation Form (conditionally shown) -->
+    <section v-if="showForm" class="bg-white p-6 rounded-lg shadow mb-8 border border-blue-300">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">🆕 Create New Campaign</h2>
     <!-- Step 1: Campaign Info -->
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Campaign Info</h2>
@@ -89,6 +102,7 @@
   <option value="pieces">Pieces</option>
   <option value="cartons">Cartons</option>
 </select> 
+
       </div>
     </section>
 
@@ -99,9 +113,19 @@
     <section class="bg-white p-6 rounded-lg shadow mb-8">
       <h2 class="text-lg font-semibold text-gray-700 mb-4">4. Incentive Tiers (Multipliers)</h2>
       <form @submit.prevent="addTier" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        <input type="number" step="0.1" v-model.number="tierForm.multiplier" placeholder="Multiplier" class="input border border-gray-300 text-center rounded px-3 py-2 w-full"  required />
-        <input type="number" v-model.number="tierForm.reward_per_unit" placeholder="Reward/Unit" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" required />
+        <section>
+           <label class=" border-gray-300 text-center rounded px-3 py-2 w-full">Multiplier</label>
+          <input type="number" step="0.1" v-model.number="tierForm.multiplier" placeholder="Multiplier" class="input border border-gray-300 text-center rounded px-3 py-2 w-full"  required />
+      </section>
+        <section>
+          <label class=" border-gray-300 text-center rounded px-3 py-2 w-full">Reward amount</label>
+<input type="number" v-model.number="tierForm.reward_per_unit" placeholder="Reward/Unit" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" required />
+        </section>
+        
+        <section>
+          <label class=" border-gray-300 text-center rounded px-3 py-2 w-full">Name Of The Tier</label>
         <input type="text" v-model="tierForm.notes" placeholder="Tier Label (optional)" class="input border border-gray-300 text-center rounded px-3 py-2 w-full" />
+        </section>
         <button type="submit" class="btn-outline sm:col-span-3">➕ Add Incentive Tier</button>
       </form>
       <ul class="list-disc list-inside text-sm text-gray-700">
@@ -143,6 +167,8 @@
     <div class="text-right mt-6">
       <button class="btn-blue" @click="saveFullCampaign">📂 Save Full Campaign</button>
     </div>
+        </section>
+
   </div>
 </template>
 
@@ -161,7 +187,7 @@ import { apiFetchProducts } from '@/model/products';
 import { apiFetchSalespeople } from '@/model/api';
 import { useRouter } from 'vue-router';
 const router = useRouter();
-
+const showForm = ref(false);
 
 
 const campaignForm = ref({ name: '', brand: '', start_date: '', end_date: '' });
