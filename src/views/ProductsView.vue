@@ -56,6 +56,16 @@
       </form>
     </div>
 
+    <section class="bg-white p-4 rounded-lg shadow mb-6">
+  <h2 class="text-lg font-semibold text-gray-700 mb-2">📤 Upload Products CSV</h2>
+  <input
+    type="file"
+    accept=".csv"
+    @change="handleCsvUpload"
+    class="block w-full border border-gray-300 rounded p-2"
+  />
+</section>
+
     <!-- Product List Table -->
     <div class="bg-white p-6 rounded-lg shadow-md">
       <h2 class="text-xl font-semibold text-gray-700 mb-4">Product List</h2>
@@ -91,6 +101,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { apiAddProduct, apiFetchProducts, ProductPayload, Product } from '../model/products';
+import Papa from 'papaparse';
 
 const newProduct = ref<ProductPayload>({
   sku: '',
@@ -143,6 +154,70 @@ async function handleAddProduct() {
     alert('Error saving product.');
   }
 }
+
+async function handleCsvUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const text = typeof e.target?.result === 'string' ? e.target.result : '';
+if (!text) {
+  alert('❌ Unable to read file contents.');
+  return;
+}
+    const lines = text.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length < 5) {
+        console.warn(`❌ Row ${i + 1} skipped: Not enough columns`);
+        failureCount++;
+        continue;
+      }
+
+      const row: Record<string, string> = {};
+      headers.forEach((key, idx) => row[key] = values[idx]);
+
+      const product = {
+        name: row.name,
+        brand: row.brand,
+        sku: row.sku,
+        cost_price: parseFloat(row.cost_price),
+        unit_price: parseFloat(row.unit_price),
+        description: row.description || '',
+        carton_size: parseInt(row.carton_size || '1'),
+        category: row.category || 'General'
+      };
+
+      if (!product.name || !product.brand || isNaN(product.cost_price) || isNaN(product.unit_price)) {
+        console.warn(`⚠️ Row ${i + 1}: Missing or invalid data`);
+        failureCount++;
+        continue;
+      }
+
+      try {
+        await apiAddProduct(product);
+        successCount++;
+      } catch (error) {
+        console.error(`❌ Row ${i + 1} failed:`, error);
+        failureCount++;
+      }
+    }
+
+    alert(`✅ Upload complete: ${successCount} added, ${failureCount} failed.`);
+    await loadProducts();
+  };
+
+  reader.readAsText(file);
+}
+
+
 
 onMounted(() => {
   loadProducts();
