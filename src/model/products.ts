@@ -27,6 +27,8 @@ export interface ProductPayload {
   carton_size: number ; 
 }
 
+
+
 // --- API Functions ---
 
 export async function apiFetchProducts(): Promise<Product[]> {
@@ -48,6 +50,17 @@ export async function apiAddProduct(payload: ProductPayload): Promise<void> {
     console.log("API: Product added successfully.");
   } catch (error) {
     console.error("API Error adding product:", error);
+    throw new Error(String(error));
+  }
+}
+
+export async function apiUpdateProduct(product: Product): Promise<void> {
+  
+    try {
+    return await invoke('update_product', { product });
+    console.log("API: Product edited successfully.");
+  } catch (error) {
+    console.error("API Error editing product:", error);
     throw new Error(String(error));
   }
 }

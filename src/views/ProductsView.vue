@@ -2,10 +2,26 @@
   <div class="p-6 sm:p-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Product Management</h1>
 
-    <!-- Add New Product Form -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-      <h2 class="text-xl font-semibold text-gray-700 mb-4">Add New Product</h2>
-      <form @submit.prevent="handleAddProduct" class="space-y-4">
+    <!-- Download Template Button -->
+    <div class="mb-4">
+      <a
+        href="/sample-product-template.csv"
+        download
+        class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        ⬇️ Download CSV Template
+      </a>
+    </div>
+
+    <!-- Search Product -->
+    <div class="mb-4">
+      <input v-model="searchQuery" placeholder="Search product..." class="w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
+    </div>
+
+    <!-- Add or Edit Product Form -->
+    <div :class="[isEditMode ? 'bg-yellow-100' : 'bg-white', 'p-6 rounded-lg shadow-md mb-8']">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h2>
+      <form @submit.prevent="handleAddOrUpdateProduct" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
           <input type="text" v-model="newProduct.name" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
@@ -34,51 +50,52 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Carton Size *</label>
           <input type="number" v-model="newProduct.carton_size" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
         </div>
-        <button type="submit" class="mt-2 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-          Add Product
-        </button>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+            {{ isEditMode ? 'Update Product' : 'Add Product' }}
+          </button>
+          <button v-if="isEditMode" @click="cancelEdit" type="button" class="py-2 px-4 text-sm font-medium rounded-md bg-gray-300 hover:bg-gray-400">
+            Cancel Edit
+          </button>
+        </div>
       </form>
     </div>
 
-    <!-- Upload Products CSV -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-      <h2 class="text-xl font-semibold text-gray-700 mb-4">📤 Upload Products CSV</h2>
-      <input type="file" accept=".csv" @change="previewCsvUpload" class="block w-full border border-gray-300 rounded p-2 mb-4" />
+    <!-- CSV Upload and Preview -->
+    <section class="bg-white p-4 rounded-lg shadow mb-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-2">📤 Upload Products CSV</h2>
+      <input type="file" accept=".csv" @change="handleCsvPreview" class="block w-full border border-gray-300 rounded p-2" />
 
-      <div v-if="csvPreview.length">
-        <h3 class="text-md font-medium text-gray-800 mb-2">Preview:</h3>
-        <table class="w-full table-auto border-collapse border mb-4">
+      <div v-if="csvPreview.length" class="mt-4">
+        <h3 class="font-semibold text-gray-700 mb-2">Preview:</h3>
+        <table class="w-full table-auto border">
           <thead>
             <tr>
-              <th class="border px-3 py-2 text-left">Name</th>
-              <th class="border px-3 py-2 text-left">Brand</th>
-              <th class="border px-3 py-2 text-left">Cost Price</th>
-              <th class="border px-3 py-2 text-left">Selling Price</th>
-              <th class="border px-3 py-2 text-left">Barcode</th>
-              <th class="border px-3 py-2 text-left">Description</th>
-              <th class="border px-3 py-2 text-left">Carton Size</th>
+              <th class="border px-3 py-1">Name</th>
+              <th class="border px-3 py-1">Brand</th>
+              <th class="border px-3 py-1">Cost Price</th>
+              <th class="border px-3 py-1">Unit Price</th>
+              <th class="border px-3 py-1">Carton Size</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(product, index) in csvPreview" :key="index">
-              <td class="border px-3 py-2">{{ product.name }}</td>
-              <td class="border px-3 py-2">{{ product.brand }}</td>
-              <td class="border px-3 py-2">{{ product.cost_price }}</td>
-              <td class="border px-3 py-2">{{ product.unit_price }}</td>
-              <td class="border px-3 py-2">{{ product.sku }}</td>
-              <td class="border px-3 py-2">{{ product.description }}</td>
-              <td class="border px-3 py-2">{{ product.carton_size }}</td>
+            <tr v-for="(item, index) in csvPreview" :key="index">
+              <td class="border px-3 py-1" :class="{ 'text-red-600': !item.name }">{{ item.name }}</td>
+              <td class="border px-3 py-1" :class="{ 'text-red-600': !item.brand }">{{ item.brand }}</td>
+              <td class="border px-3 py-1" :class="{ 'text-red-600': item.cost_price <= 0 }">{{ item.cost_price }}</td>
+              <td class="border px-3 py-1" :class="{ 'text-red-600': item.unit_price <= 0 }">{{ item.unit_price }}</td>
+              <td class="border px-3 py-1">{{ item.carton_size }}</td>
             </tr>
           </tbody>
         </table>
-        <button @click="uploadConfirmedCsv" class="btn-blue">✅ Confirm & Upload</button>
+        <button class="mt-4 bg-blue-600 text-white px-4 py-2 rounded" @click="confirmCsvUpload">✅ Confirm & Upload</button>
       </div>
-    </div>
+    </section>
 
     <!-- Product List -->
     <div class="bg-white p-6 rounded-lg shadow-md">
       <h2 class="text-xl font-semibold text-gray-700 mb-4">Product List</h2>
-      <table v-if="products.length > 0" class="w-full table-auto border-collapse border">
+      <table v-if="filteredProducts.length > 0" class="w-full table-auto border-collapse border">
         <thead>
           <tr>
             <th class="border px-3 py-2 text-left">Name</th>
@@ -88,10 +105,15 @@
             <th class="border px-3 py-2 text-left">Barcode</th>
             <th class="border px-3 py-2 text-left">Description</th>
             <th class="border px-3 py-2 text-left">Carton Size</th>
+            <th class="border px-3 py-2 text-left">Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(product, index) in products" :key="index">
+          <tr
+            v-for="(product, index) in filteredProducts"
+            :key="index"
+            :class="{ 'bg-yellow-100': isEditMode && newProduct.id === product.id }"
+          >
             <td class="border px-3 py-2">{{ product.name }}</td>
             <td class="border px-3 py-2">{{ product.brand }}</td>
             <td class="border px-3 py-2">{{ product.cost_price }}</td>
@@ -99,102 +121,115 @@
             <td class="border px-3 py-2">{{ product.sku || '-' }}</td>
             <td class="border px-3 py-2">{{ product.description || '-' }}</td>
             <td class="border px-3 py-2">{{ product.carton_size || '-' }}</td>
+            <td class="border px-3 py-2">
+              <button @click="editProduct(product)" class="text-blue-600 hover:underline">Edit</button>
+            </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="text-gray-500">No products added yet.</p>
+      <p v-else class="text-gray-500">No products found.</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { apiAddProduct, apiFetchProducts, apiUpdateProduct } from '@/model/products';
 import Papa from 'papaparse';
-import { apiAddProduct, apiFetchProducts, ProductPayload, Product } from '../model/products';
 
-const newProduct = ref<ProductPayload>({
-  sku: '',
-  name: '',
-  brand: '',
-  category: 'General',
-  cost_price: 0,
-  unit_price: 0,
-  description: '',
-  carton_size: 1,
+const newProduct = ref({ sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 });
+const products = ref([]);
+const isEditMode = ref(false);
+const csvPreview = ref([]);
+const searchQuery = ref('');
+
+const filteredProducts = computed(() => {
+  return products.value.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    p.brand.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
 });
 
-const products = ref<Product[]>([]);
-const csvPreview = ref<any[]>([]);
-
-async function loadProducts() {
-  products.value = await apiFetchProducts();
+function editProduct(product: any) {
+  newProduct.value = { ...product };
+  isEditMode.value = true;
 }
 
-async function handleAddProduct() {
+function cancelEdit() {
+  isEditMode.value = false;
+  newProduct.value = { sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 };
+}
+
+async function handleAddOrUpdateProduct() {
   if (!newProduct.value.name || !newProduct.value.brand || newProduct.value.cost_price <= 0 || newProduct.value.unit_price <= 0) {
     alert('Product name, brand, and price are required.');
     return;
   }
 
   try {
-    await apiAddProduct(newProduct.value);
-    alert('✅ Product added!');
+    if (isEditMode.value && newProduct.value.id) {
+      await apiUpdateProduct(newProduct.value);
+      alert('✅ Product updated!');
+    } else {
+      await apiAddProduct(newProduct.value);
+      alert('✅ Product added!');
+    }
     await loadProducts();
-    newProduct.value = {
-      sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1
-    };
+    cancelEdit();
   } catch (err) {
     console.error('Error saving product:', err);
     alert('❌ Failed to save product.');
   }
 }
 
-function previewCsvUpload(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0];
+async function handleCsvPreview(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file) return;
 
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
-    complete(results) {
-      csvPreview.value = results.data as any[];
-    },
+    complete: (results) => {
+      csvPreview.value = (results.data as any[]).map(row => ({
+        name: row.name,
+        brand: row.brand,
+        sku: row.sku,
+        cost_price: parseFloat(row.cost_price),
+        unit_price: parseFloat(row.unit_price),
+        description: row.description || '',
+        carton_size: parseInt(row.carton_size || '1'),
+        category: row.category || 'General'
+      }));
+    }
   });
 }
 
-async function uploadConfirmedCsv() {
+async function confirmCsvUpload() {
   let success = 0, failed = 0;
-
   for (const row of csvPreview.value) {
-    const product = {
-      name: row.name,
-      brand: row.brand,
-      sku: row.sku,
-      cost_price: parseFloat(row.cost_price),
-      unit_price: parseFloat(row.unit_price),
-      description: row.description || '',
-      carton_size: parseInt(row.carton_size || '1'),
-      category: row.category || 'General'
-    };
-
-    if (!product.name || !product.brand || isNaN(product.cost_price) || isNaN(product.unit_price)) {
+    if (!row.name || !row.brand || isNaN(row.cost_price) || isNaN(row.unit_price)) {
       failed++;
       continue;
     }
-
     try {
-      await apiAddProduct(product);
+      await apiAddProduct(row);
       success++;
-    } catch (e) {
+    } catch (err) {
+      console.error('Upload error:', err);
       failed++;
-      console.error('Upload error:', e);
     }
   }
-
-  alert(`✅ Upload done: ${success} success, ${failed} failed.`);
-  csvPreview.value = [];
+  alert(`✅ Upload complete: ${success} added, ${failed} failed.`);
   await loadProducts();
+  csvPreview.value = [];
 }
 
-onMounted(loadProducts);
+async function loadProducts() {
+  products.value = await apiFetchProducts();
+}
+
+onMounted(() => {
+  loadProducts();
+});
 </script>

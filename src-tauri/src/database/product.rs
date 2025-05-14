@@ -30,6 +30,19 @@ pub struct NewProduct {
     pub carton_size:i32,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct UpdateProduct {
+    pub id: i32,
+    pub sku: String,
+    pub name: String,
+    pub brand: String,
+    pub category: String,
+    pub cost_price: f64,
+    pub unit_price: f64,
+    pub description: Option<String>,
+    pub carton_size: i32,
+}
+
 #[tauri::command]
 pub fn add_product(
     conn: State<'_, Mutex<Connection>>,
@@ -93,4 +106,41 @@ pub fn get_products(conn: State<'_, Mutex<Connection>>) -> Result<Vec<Product>, 
 
     Ok(result)
 }
-//hekkww
+
+#[tauri::command]
+pub fn update_product(
+    conn: State<'_, Mutex<Connection>>,
+    product: UpdateProduct,
+) -> Result<(), String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "UPDATE products SET
+            sku = ?1,
+            name = ?2,
+            brand = ?3,
+            category = ?4,
+            cost_price = ?5,
+            unit_price = ?6,
+            description = ?7,
+            carton_size = ?8
+         WHERE id = ?9",
+        params![
+            product.sku,
+            product.name,
+            product.brand,
+            product.category,
+            product.cost_price,
+            product.unit_price,
+            product.description,
+            product.carton_size,
+            product.id,
+        ],
+    )
+    .map_err(|e| {
+        println!("❌ DB update_product Error: {:?}", e);
+        e.to_string()
+    })?;
+
+    Ok(())
+}
