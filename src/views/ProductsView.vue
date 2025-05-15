@@ -4,13 +4,12 @@
 
     <!-- Download Template Button -->
     <div class="mb-4">
-      <a
-        href="/sample-product-template.csv"
-        download
-        class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        ⬇️ Download CSV Template
-      </a>
+     <button
+  @click="downloadTemplate"
+  class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+>
+  ⬇️ Download CSV Template
+</button>
     </div>
 
     <!-- Search Product -->
@@ -181,6 +180,26 @@ async function handleAddOrUpdateProduct() {
     console.error('Error saving product:', err);
     alert('❌ Failed to save product.');
   }
+}
+
+
+function downloadTemplate() {
+  const headers = [
+    'name,brand,sku,cost_price,unit_price,description,carton_size,category'
+  ];
+  const sample = [
+    'Sample Product,BrandX,SKU123,10.5,15.0,A sample product,12,General'
+  ];
+  const csvContent = headers.concat(sample).join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'sample-product-template.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 async function handleCsvPreview(event: Event) {
