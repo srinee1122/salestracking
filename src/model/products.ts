@@ -64,3 +64,7 @@ export async function apiUpdateProduct(product: Product): Promise<void> {
     throw new Error(String(error));
   }
 }
+
+export async function apiDeleteProduct(id: number) {
+  return await invoke('delete_product', { id });
+}

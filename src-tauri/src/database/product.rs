@@ -144,3 +144,21 @@ pub fn update_product(
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn delete_product(
+    conn: State<'_, Mutex<Connection>>,
+    id: i32,
+) -> Result<(), String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "DELETE FROM products WHERE id = ?1",
+        params![id],
+    ).map_err(|e| {
+        println!("❌ DB delete_product Error: {:?}", e);
+        e.to_string()
+    })?;
+
+    Ok(())
+}

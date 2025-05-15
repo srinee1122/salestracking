@@ -123,6 +123,7 @@
             <td class="border px-3 py-2">{{ product.carton_size || '-' }}</td>
             <td class="border px-3 py-2">
               <button @click="editProduct(product)" class="text-blue-600 hover:underline">Edit</button>
+              <button @click="() => handleDelete(product.id)" class="text-red-600 hover:underline">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -134,7 +135,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { apiAddProduct, apiFetchProducts, apiUpdateProduct } from '@/model/products';
+import { apiAddProduct, apiFetchProducts, apiUpdateProduct,apiDeleteProduct } from '@/model/products';
 import Papa from 'papaparse';
 
 const newProduct = ref({ sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 });
@@ -205,6 +206,9 @@ async function handleCsvPreview(event: Event) {
   });
 }
 
+
+
+
 async function confirmCsvUpload() {
   let success = 0, failed = 0;
   for (const row of csvPreview.value) {
@@ -223,6 +227,18 @@ async function confirmCsvUpload() {
   alert(`✅ Upload complete: ${success} added, ${failed} failed.`);
   await loadProducts();
   csvPreview.value = [];
+}
+
+async function handleDelete(productId: number) {
+  if (!confirm('Are you sure you want to delete this product?')) return;
+  try {
+    await apiDeleteProduct(productId);
+    alert('✅ Product deleted!');
+    await loadProducts();
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    alert('❌ Failed to delete product.');
+  }
 }
 
 async function loadProducts() {
