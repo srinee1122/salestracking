@@ -58,7 +58,7 @@ export async function apiUpdateProduct(product: Product): Promise<void> {
   
     try {
     return await invoke('update_product', { product });
-    console.log("API: Product edited successfully.");
+  
   } catch (error) {
     console.error("API Error editing product:", error);
     throw new Error(String(error));
@@ -67,4 +67,16 @@ export async function apiUpdateProduct(product: Product): Promise<void> {
 
 export async function apiDeleteProduct(id: number) {
   return await invoke('delete_product', { id });
+}
+
+
+
+export async function apiCheckProductUsage(productId: number): Promise<boolean> { // this is being called from the vue
+  try {
+    const result = await invoke<boolean>('check_product_usage', { productId });   // this is the call to rs to communicate with the database
+    return result;
+  } catch (error) {
+    console.error('❌ Error checking product usage:', error);
+    return false;
+  }
 }

@@ -162,3 +162,24 @@ pub fn delete_product(
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn check_product_usage(conn: State<'_, Mutex<Connection>>, product_id: i32) -> Result<bool, String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    let mut stmt_campaigns = conn.prepare(
+        "SELECT COUNT(*) FROM target_campaign_products WHERE product_id = ?1"
+    ).map_err(|e| e.to_string())?;
+
+    let campaign_count: i32 = stmt_campaigns.query_row(params![product_id], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+
+    let mut stmt_sales = conn.prepare(
+        "SELECT COUNT(*) FROM salesentry WHERE product_id = ?1"
+    ).map_err(|e| e.to_string())?;
+
+    let sales_count: i32 = stmt_sales.query_row(params![product_id], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+
+    Ok(campaign_count > 0 || sales_count > 0)
+}

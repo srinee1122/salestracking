@@ -134,7 +134,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { apiAddProduct, apiFetchProducts, apiUpdateProduct,apiDeleteProduct } from '@/model/products';
+import { apiAddProduct, apiFetchProducts, apiUpdateProduct,apiDeleteProduct,apiCheckProductUsage } from '@/model/products';
 import Papa from 'papaparse';
 
 const newProduct = ref({ sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 });
@@ -249,13 +249,22 @@ async function confirmCsvUpload() {
 }
 
 async function handleDelete(productId: number) {
-  if (!confirm('Are you sure you want to delete this product?')) return;
   try {
+    const isUsed = await apiCheckProductUsage(productId);
+
+    if (isUsed) {
+      alert('❌ Cannot delete product. It is currently used in campaigns or sales.');
+      return;
+    }
+
+    const confirmed = confirm('Are you sure you want to delete this product?');
+    if (!confirmed) return;
+
     await apiDeleteProduct(productId);
     alert('✅ Product deleted!');
     await loadProducts();
-  } catch (err) {
-    console.error('Error deleting product:', err);
+  } catch (error) {
+    console.error('Error deleting product:', error);
     alert('❌ Failed to delete product.');
   }
 }
