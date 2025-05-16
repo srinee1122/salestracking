@@ -2,20 +2,79 @@
   <div class="p-6 sm:p-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Product Management</h1>
 
+     <!-- Search bar -->
+    <div class="mb-4">
+  <input
+    v-model="searchQuery"
+    placeholder="🔍 Search by name, brand, ID..."
+    class="w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm"
+  />
+</div>
+
+   <!-- Product List -->
+
+
+  <!-- Product List: Vertical Layout with Scroll -->
+<div class="bg-white p-6 rounded-lg shadow-md">
+  <h2 class="text-xl font-semibold text-gray-700 mb-4">Product List</h2>
+
+  <div class="overflow-y-auto max-h-[500px] border rounded">
+    <table class="w-full table-auto border-collapse">
+      <thead class="sticky top-0 bg-gray-100 z-10">
+        <tr>
+          <th class="border px-3 py-2 text-left">SL NO</th>
+          <th class="border px-3 py-2 text-left">Name</th>
+          <th class="border px-3 py-2 text-left">Brand</th>
+          <th class="border px-3 py-2 text-left">Cost Price</th>
+          <th class="border px-3 py-2 text-left">Selling Price</th>
+          <th class="border px-3 py-2 text-left">Barcode</th>
+          <th class="border px-3 py-2 text-left">Description</th>
+          <th class="border px-3 py-2 text-left">Carton Size</th>
+          <th class="border px-3 py-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="(product, index) in filteredProducts"
+          :key="product.id"
+          :class="[
+            isEditMode && newProduct.id === product.id ? 'bg-yellow-100' : '',
+            index % 2 === 0 ? 'bg-white' : 'bg-gray-100',
+            'hover:bg-blue-50 transition-colors'
+          ]"
+        >
+          <td class="border px-3 py-2">{{ index }}</td>
+          <td class="border px-3 py-2">{{ product.name }}</td>
+          <td class="border px-3 py-2">{{ product.brand }}</td>
+          <td class="border px-3 py-2">{{ product.cost_price }}</td>
+          <td class="border px-3 py-2">{{ product.unit_price }}</td>
+          <td class="border px-3 py-2">{{ product.sku }}</td>
+          <td class="border px-3 py-2">{{ product.description }}</td>
+          <td class="border px-3 py-2">{{ product.carton_size }}</td>
+          <td class="border px-3 py-2 space-x-2">
+            <button @click="editProduct(product)" class="text-blue-600 hover:underline text-sm">Edit</button>
+            <button @click="deleteProduct(product.id)" class="text-red-600 hover:underline text-sm">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
     <!-- Download Template Button -->
     <div class="mb-4">
-     <button
-  @click="downloadTemplate"
-  class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
->
-  ⬇️ Download CSV Template
-</button>
+      <button
+        @click="downloadTemplate"
+        class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        ⬇️ Download CSV Template
+      </button>
     </div>
 
     <!-- Search Product -->
-    <div class="mb-4">
+    <!-- <div class="mb-4">
       <input v-model="searchQuery" placeholder="Search product..." class="w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
-    </div>
+    </div> -->
 
     <!-- Add or Edit Product Form -->
     <div :class="[isEditMode ? 'bg-yellow-100' : 'bg-white', 'p-6 rounded-lg shadow-md mb-8']">
@@ -31,11 +90,11 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Cost Price (in Pcs) *</label>
-          <input type="number" v-model.number="newProduct.cost_price" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
+          <input   type="number" step="0.01" inputmode="decimal" v-model="newProduct.cost_price" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (in Pcs)*</label>
-          <input type="number" v-model.number="newProduct.unit_price" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
+          <input   type="number" step="0.01" inputmode="decimal" v-model="newProduct.unit_price" required class="block w-full px-4 py-2 border rounded-md shadow-sm sm:text-sm" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
@@ -78,7 +137,14 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in csvPreview" :key="index">
+            <tr
+  v-for="(item, index) in csvPreview"
+  :key="index"
+  :class="[
+    csvErrors[index] ? 'bg-red-100' : 'bg-green-50',
+    'transition-colors'
+  ]"
+>+
               <td class="border px-3 py-1" :class="{ 'text-red-600': !item.name }">{{ item.name }}</td>
               <td class="border px-3 py-1" :class="{ 'text-red-600': !item.brand }">{{ item.brand }}</td>
               <td class="border px-3 py-1" :class="{ 'text-red-600': item.cost_price <= 0 }">{{ item.cost_price }}</td>
@@ -91,78 +157,119 @@
       </div>
     </section>
 
-    <!-- Product List -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-xl font-semibold text-gray-700 mb-4">Product List</h2>
-      <table v-if="filteredProducts.length > 0" class="w-full table-auto border-collapse border">
-        <thead>
-          <tr>
-            <th class="border px-3 py-2 text-left">Name</th>
-            <th class="border px-3 py-2 text-left">Brand</th>
-            <th class="border px-3 py-2 text-left">Cost Price</th>
-            <th class="border px-3 py-2 text-left">Selling Price</th>
-            <th class="border px-3 py-2 text-left">Barcode</th>
-            <th class="border px-3 py-2 text-left">Description</th>
-            <th class="border px-3 py-2 text-left">Carton Size</th>
-            <th class="border px-3 py-2 text-left">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(product, index) in filteredProducts"
-            :key="index"
-            :class="{ 'bg-yellow-100': isEditMode && newProduct.id === product.id }"
-          >
-            <td class="border px-3 py-2">{{ product.name }}</td>
-            <td class="border px-3 py-2">{{ product.brand }}</td>
-            <td class="border px-3 py-2">{{ product.cost_price }}</td>
-            <td class="border px-3 py-2">{{ product.unit_price }}</td>
-            <td class="border px-3 py-2">{{ product.sku || '-' }}</td>
-            <td class="border px-3 py-2">{{ product.description || '-' }}</td>
-            <td class="border px-3 py-2">{{ product.carton_size || '-' }}</td>
-            <td class="border px-3 py-2">
-              <button @click="editProduct(product)" class="text-blue-600 hover:underline">Edit</button>
-              <button @click="() => handleDelete(product.id)" class="text-red-600 hover:underline">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="text-gray-500">No products found.</p>
-    </div>
-  </div>
+   
+</div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { apiAddProduct, apiFetchProducts, apiUpdateProduct,apiDeleteProduct,apiCheckProductUsage } from '@/model/products';
+import { ref, onMounted,computed } from 'vue';
+import { apiAddProduct, apiFetchProducts, apiUpdateProduct, apiDeleteProduct } from '@/model/products';
 import Papa from 'papaparse';
+import { invoke } from '@tauri-apps/api';
 
-const newProduct = ref({ sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 });
 const products = ref([]);
+const newProduct = ref({ id: null, sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 });
 const isEditMode = ref(false);
 const csvPreview = ref([]);
 const searchQuery = ref('');
 
-const filteredProducts = computed(() => {
-  return products.value.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    p.brand.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
-});
+function cancelEdit() {
+  isEditMode.value = false;
+  newProduct.value = { id: null, sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 };
+}
+
 
 function editProduct(product: any) {
   newProduct.value = { ...product };
   isEditMode.value = true;
 }
 
-function cancelEdit() {
-  isEditMode.value = false;
-  newProduct.value = { sku: '', name: '', brand: '', category: 'General', cost_price: 0, unit_price: 0, description: '', carton_size: 1 };
+async function deleteProduct(productId: number) {
+  const confirmDelete = confirm("Are you sure you want to delete this product?");
+  if (!confirmDelete) return;
+
+ try {
+  await apiDeleteProduct(productId);
+  alert("✅ Product deleted.");
+  await loadProducts();
+} catch (err) {
+  showDeleteError(err);
+}
+}
+async function downloadTemplate() {
+  const content = `name,brand,sku,cost_price,unit_price,description,carton_size,category\nSample Product,Sample Brand,123456,1.99,2.99,Sample Description,24,General`;
+  const blob = new Blob([content], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'sample-product-template.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+
+const csvErrors = ref<string[]>([]); // Holds error messages per row
+function handleCsvPreview(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      const parsed = (results.data as any[]).map((row, index) => {
+        const parsedRow = {
+          name: row.name || '',
+          brand: row.brand || '',
+          sku: row.sku || '',
+          cost_price: parseFloat(row.cost_price),
+          unit_price: parseFloat(row.unit_price),
+          description: row.description || '',
+          carton_size: parseInt(row.carton_size || '1'),
+          category: row.category || 'General'
+        };
+
+        // Validate row
+        const isValid = parsedRow.name && parsedRow.brand && parsedRow.cost_price > 0 && parsedRow.unit_price > 0;
+        csvErrors.value[index] = isValid ? '' : 'Invalid row';
+        return parsedRow;
+      });
+
+      csvPreview.value = parsed;
+    }
+  });
+}
+async function confirmCsvUpload() {
+  let success = 0, failed = 0;
+
+  for (let i = 0; i < csvPreview.value.length; i++) {
+    const row = csvPreview.value[i];
+    if (csvErrors.value[i]) {
+      failed++;
+      continue;
+    }
+
+    try {
+      await apiAddProduct(row);
+      success++;
+    } catch (err) {
+      console.error(`Upload error (row ${i + 1}):`, err);
+      failed++;
+    }
+  }
+
+  alert(`✅ Upload complete: ${success} added, ${failed} failed.`);
+  await loadProducts();
+  csvPreview.value = [];
+  csvErrors.value = [];
 }
 
 async function handleAddOrUpdateProduct() {
   if (!newProduct.value.name || !newProduct.value.brand || newProduct.value.cost_price <= 0 || newProduct.value.unit_price <= 0) {
-    alert('Product name, brand, and price are required.');
+    alert('⚠️ Name, brand, cost and selling price are required.');
     return;
   }
 
@@ -177,97 +284,26 @@ async function handleAddOrUpdateProduct() {
     await loadProducts();
     cancelEdit();
   } catch (err) {
-    console.error('Error saving product:', err);
-    alert('❌ Failed to save product.');
+    console.error('API Error:', err);
+    alert('❌ Save failed. Check if SKU is unique.');
   }
 }
 
-
-function downloadTemplate() {
-  const headers = [
-    'name,brand,sku,cost_price,unit_price,description,carton_size,category'
-  ];
-  const sample = [
-    'Sample Product,BrandX,SKU123,10.5,15.0,A sample product,12,General'
-  ];
-  const csvContent = headers.concat(sample).join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', 'sample-product-template.csv');
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+function showDeleteError(err: any) {
+  const message = typeof err === "string" ? err : err?.message || "❌ Delete failed.";
+  alert(message);
 }
 
-async function handleCsvPreview(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      csvPreview.value = (results.data as any[]).map(row => ({
-        name: row.name,
-        brand: row.brand,
-        sku: row.sku,
-        cost_price: parseFloat(row.cost_price),
-        unit_price: parseFloat(row.unit_price),
-        description: row.description || '',
-        carton_size: parseInt(row.carton_size || '1'),
-        category: row.category || 'General'
-      }));
-    }
-  });
-}
-
-
-
-
-async function confirmCsvUpload() {
-  let success = 0, failed = 0;
-  for (const row of csvPreview.value) {
-    if (!row.name || !row.brand || isNaN(row.cost_price) || isNaN(row.unit_price)) {
-      failed++;
-      continue;
-    }
-    try {
-      await apiAddProduct(row);
-      success++;
-    } catch (err) {
-      console.error('Upload error:', err);
-      failed++;
-    }
-  }
-  alert(`✅ Upload complete: ${success} added, ${failed} failed.`);
-  await loadProducts();
-  csvPreview.value = [];
-}
-
-async function handleDelete(productId: number) {
-  try {
-    const isUsed = await apiCheckProductUsage(productId);
-
-    if (isUsed) {
-      alert('❌ Cannot delete product. It is currently used in campaigns or sales.');
-      return;
-    }
-
-    const confirmed = confirm('Are you sure you want to delete this product?');
-    if (!confirmed) return;
-
-    await apiDeleteProduct(productId);
-    alert('✅ Product deleted!');
-    await loadProducts();
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    alert('❌ Failed to delete product.');
-  }
-}
+const filteredProducts = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  return products.value.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    p.brand.toLowerCase().includes(query) ||
+    p.description.toLowerCase().includes(query) ||
+    String(p.product_id).includes(query) ||
+    String(p.sku).includes(query)
+  );
+});
 
 async function loadProducts() {
   products.value = await apiFetchProducts();

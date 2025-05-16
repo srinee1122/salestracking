@@ -152,10 +152,38 @@ pub fn delete_product(
 ) -> Result<(), String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
 
+    // Check if product is used in salesentry
+    let used_in_sales: i32 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM salesentry WHERE product_id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check salesentry usage: {}", e))?;
+
+    // Check if product is used in target_campaign_products
+    let used_in_campaigns: i32 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM target_campaign_products WHERE product_id = ?1",
+            params![id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check campaign usage: {}", e))?;
+
+    // If product is in use, prevent deletion
+    if used_in_sales > 0 || used_in_campaigns > 0 {
+        return Err(format!(
+            "❌ Cannot delete: Product is used in {} sale(s) and {} campaign(s).",
+            used_in_sales, used_in_campaigns
+        ));
+    }
+
+    // Safe to delete
     conn.execute(
         "DELETE FROM products WHERE id = ?1",
         params![id],
-    ).map_err(|e| {
+    )
+    .map_err(|e| {
         println!("❌ DB delete_product Error: {:?}", e);
         e.to_string()
     })?;
@@ -163,6 +191,7 @@ pub fn delete_product(
     Ok(())
 }
 
+// this is not used, cz delete checks for usage in the above function
 #[tauri::command]
 pub fn check_product_usage(conn: State<'_, Mutex<Connection>>, product_id: i32) -> Result<bool, String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;

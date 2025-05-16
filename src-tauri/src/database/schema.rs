@@ -25,7 +25,7 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
     tx.execute(
         "CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sku TEXT UNIQUE NOT NULL,
+            sku TEXT UNIQUE,
             name TEXT NOT NULL,
             brand TEXT NOT NULL,
             category TEXT,
