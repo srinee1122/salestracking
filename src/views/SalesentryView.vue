@@ -60,32 +60,46 @@
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Sales Entries</h2>
         <table v-if="entries.length" class="w-full border border-collapse">
           <thead>
-            <tr>
-              <th class="border px-3 py-2 text-left">Salesperson</th>
-              <th class="border px-3 py-2 text-left">Product</th>
-              <th class="border px-3 py-2 text-left">Date</th>
-              <th class="border px-3 py-2 text-left">Quantity</th>
-              <th class="border px-3 py-2 text-left">Unit Type</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="entry in entries" :key="entry.id">
-              <td class="border px-3 py-2">{{ getSalespersonName(entry.salesperson_id) }}</td>
-              <td class="border px-3 py-2">{{ getProductName(entry.product_id) }}</td>
-              <td class="border px-3 py-2">{{ entry.date }}</td>
-              <td class="border px-3 py-2">{{ entry.quantity }}</td>
-              <td class="border px-3 py-2">{{ entry.unit_type }}</td>
-            </tr>
-          </tbody>
+  <tr>
+    <th class="border px-3 py-2 text-left">
+      <input type="checkbox" @change="toggleSelectAll" :checked="allSelected" />
+    </th>
+    <th class="border px-3 py-2 text-left">Salesperson</th>
+    <th class="border px-3 py-2 text-left">Product</th>
+    <th class="border px-3 py-2 text-left">Date</th>
+    <th class="border px-3 py-2 text-left">Quantity</th>
+    <th class="border px-3 py-2 text-left">Unit Type</th>
+  </tr>
+</thead>
+        <tbody>
+  <tr v-for="entry in entries" :key="entry.id">
+    <td class="border px-3 py-2">
+      <input type="checkbox" v-model="selectedEntries" :value="entry.id" />
+    </td>
+    <td class="border px-3 py-2">{{ getSalespersonName(entry.salesperson_id) }}</td>
+    <td class="border px-3 py-2">{{ getProductName(entry.product_id) }}</td>
+    <td class="border px-3 py-2">{{ entry.date }}</td>
+    <td class="border px-3 py-2">{{ entry.quantity }}</td>
+    <td class="border px-3 py-2">{{ entry.unit_type }}</td>
+  </tr>
+</tbody>
         </table>
         <p v-else class="text-gray-500">No sales entries found.</p>
       </div>
+      <div v-if="selectedEntries.length > 0" class="mt-4">
+  <button
+    @click="deleteSelectedEntries"
+    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+  >
+    🗑 Delete Selected ({{ selectedEntries.length }})
+  </button>
+</div>
     </div>
   </template>
   
   <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
-  import { apiAddSaleEntry, apiFetchSaleEntries } from '@/model/sales';
+  import { ref, onMounted, computed } from 'vue';
+  import { apiAddSaleEntry, apiFetchSaleEntries,apiDeleteSaleEntry } from '@/model/sales';
   import { apiFetchSalespeople } from '@/model/api';
   import { apiFetchProducts } from '@/model/products';
   
@@ -93,13 +107,16 @@
   const products = ref<any[]>([]);
   const entries = ref<any[]>([]);
   
-  const form = ref({
-    salespersonId: '',
-    date: new Date().toISOString().substring(0, 10),
-    productId: '',
-    quantity: 1,
-    unitType: 'pieces',
-  });
+ const form = ref({
+  salespersonId: '',
+  date: new Date().toISOString().substring(0, 10),
+  productId: '',
+  quantity: 1,
+  unitType: 'pieces',
+  brand: '',
+  unit_price: 0,
+  customer: ''
+});
   
   function handleCSVUpload(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -203,6 +220,34 @@
       console.error("Error loading sales entries:", error);
     }
   }
+
+  const selectedEntries = ref<number[]>([]);
+
+const allSelected = computed(() => {
+  return entries.value.length > 0 && selectedEntries.value.length === entries.value.length;
+});
+
+function toggleSelectAll(event: Event) {
+  const checked = (event.target as HTMLInputElement).checked;
+  selectedEntries.value = checked ? entries.value.map(e => e.id) : [];
+}
+
+async function deleteSelectedEntries() {
+  const confirmed = confirm(`Are you sure you want to delete ${selectedEntries.value.length} entries?`);
+  if (!confirmed) return;
+
+  try {
+    for (const id of selectedEntries.value) {
+      await apiDeleteSaleEntry(id);
+    }
+    alert("✅ Selected entries deleted.");
+    selectedEntries.value = [];
+    await loadSalesEntries();
+  } catch (error) {
+    console.error("❌ Error deleting entries:", error);
+    alert("❌ Error deleting one or more entries.");
+  }
+}
   
   onMounted(async () => {
     salespeople.value = await apiFetchSalespeople();

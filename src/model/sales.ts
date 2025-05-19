@@ -46,3 +46,19 @@ export async function apiFetchSaleEntries(): Promise<SaleEntry[]> {
     throw new Error(String(error));
   }
 }
+
+
+
+export async function apiDeleteSaleEntry(id: number): Promise<void> {
+
+    console.log("API: Fetching sale entries...");
+  try {
+  await invoke('delete_sale_entry', { id });
+    console.log("✅ deleted sales entry", id);
+  } catch (error) {
+    console.error("❌ API Error deleting sale entries:", error);
+    throw new Error(String(error));
+  }
+
+
+}

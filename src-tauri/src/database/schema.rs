@@ -38,19 +38,21 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
     println!("✅ Table 'products' checked/created.");
 
     // Sales entry table
-    tx.execute(
-        "CREATE TABLE IF NOT EXISTS salesentry (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            salesperson_id INTEGER NOT NULL,
-            date TEXT NOT NULL,
-            product_id INTEGER NOT NULL,
-            quantity INTEGER NOT NULL,
-            unit_type TEXT NOT NULL,
-            FOREIGN KEY (salesperson_id) REFERENCES salespeople(id),
-            FOREIGN KEY (product_id) REFERENCES products(id)
-        )",
-        [],
-    )?;
+tx.execute(
+    "CREATE TABLE IF NOT EXISTS salesentry (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        salesperson_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit_type TEXT NOT NULL,
+        unit_price REAL,
+        customer TEXT,
+        FOREIGN KEY (salesperson_id) REFERENCES salespeople(id),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+    )",
+    [],
+)?;
     println!("✅ Table 'salesentry' checked/created.");
 
     // Target campaigns table

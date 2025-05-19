@@ -4,7 +4,7 @@ mod database;
 use database::db::establish_connection;
 use database::product::{add_product,get_products,update_product,delete_product,check_product_usage};
 use database::salesperson::{add_salesperson, get_salespeople};
-use database::sales::{add_sale_entry, get_sales_entries};
+use database::sales::{add_sale_entry, get_sales_entries,  delete_sale_entry,};
 use database::incentives::{add_target_campaign, get_target_campaigns, add_target_allocation, add_target_tier, set_campaign_products, get_target_allocations, get_target_tiers, get_products_for_campaign};
 
 use std::sync::Mutex;
@@ -37,6 +37,7 @@ fn main() {
              update_product,
              delete_product, 
              check_product_usage,
+            delete_sale_entry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri application");

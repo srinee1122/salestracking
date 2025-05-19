@@ -75,3 +75,13 @@ pub fn get_sales_entries(conn: State<'_, Mutex<Connection>>) -> Result<Vec<SaleE
 
     Ok(result)
 }
+
+#[tauri::command]
+pub fn delete_sale_entry(conn: State<'_, Mutex<Connection>>, id: i32) -> Result<(), String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute("DELETE FROM salesentry WHERE id = ?", [id])
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
