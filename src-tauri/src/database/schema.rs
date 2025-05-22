@@ -91,6 +91,7 @@ tx.execute(
             campaign_id INTEGER NOT NULL,
             salesperson_id INTEGER NOT NULL,
             target_quantity INTEGER NOT NULL,
+            target_unit TEXT,
             base_reward REAL NOT NULL DEFAULT 0,
             FOREIGN KEY (campaign_id) REFERENCES target_campaigns(id),
             FOREIGN KEY (salesperson_id) REFERENCES salespeople(id)
