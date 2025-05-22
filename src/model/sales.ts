@@ -9,6 +9,9 @@ export interface SaleEntry {
   product_id: number;
   quantity: number;
   unit_type: "pieces" | "cartons";
+  brand: string;
+  sold_price: number;
+  customer: string;
 }
 
 // Payload to send when creating a new sale
@@ -18,6 +21,9 @@ export interface NewSaleEntry {
   product_id: number;
   quantity: number;
   unit_type: "pieces" | "cartons";
+  brand: string;
+  sold_price: number;
+  customer: string;
 }
 
 // Call Rust to add a new sale entry

@@ -31,6 +31,7 @@ pub fn initialize_database(conn: &mut Connection) -> RusqliteResult<()> {
             category TEXT,
             cost_price REAL NOT NULL,
             unit_price REAL NOT NULL,
+            carton_size INTEGER NOT NULL,
             description TEXT
         )",
         [],
@@ -46,7 +47,8 @@ tx.execute(
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
         unit_type TEXT NOT NULL,
-        unit_price REAL,
+        brand TEXT,
+        sold_price REAL,
         customer TEXT,
         FOREIGN KEY (salesperson_id) REFERENCES salespeople(id),
         FOREIGN KEY (product_id) REFERENCES products(id)
