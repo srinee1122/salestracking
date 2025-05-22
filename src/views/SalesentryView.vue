@@ -71,6 +71,14 @@
         </form>
       </div>
   
+      <div class="mb-4">
+  <button
+    @click="downloadSalesCSVTemplate"
+    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+  >
+    ⬇️ Download CSV Template
+  </button>
+</div>
       <!-- CSV Upload for Bulk Entry -->
       <div class="bg-white p-6 rounded-lg shadow-md mb-10">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Bulk Upload Sales (CSV)</h2>
@@ -307,6 +315,54 @@ watch(() => form.value.productId, (productId) => {
     form.value.sold_price = 0;
   }
 });
+
+function downloadSalesCSVTemplate() {
+  const headers = [
+    'salesperson',
+    'product',
+    'date',
+    'quantity',
+    'unit_type',
+    'brand',
+    'sold_price',
+    'customer'
+  ];
+
+  const sampleDate = new Date().toISOString().substring(0, 10);
+  const sampleLines: string[] = [];
+
+  // Limit to first 5 for template brevity
+  const people = salespeople.value.slice(0, 5);
+  const sampleProducts = products.value.slice(0, 5);
+
+  for (let i = 0; i < Math.min(people.length, sampleProducts.length); i++) {
+    const person = people[i];
+    const product = sampleProducts[i];
+    const line = [
+      `"${person.name}"`,
+      `"${product.name}"`,
+      sampleDate,
+      10,
+      "pieces",
+      `"${product.brand}"`,
+      product.unit_price ?? 0,
+      `"Sample Customer ${i + 1}"`
+    ];
+    sampleLines.push(line.join(','));
+  }
+
+  const csvContent = [headers.join(','), ...sampleLines].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'sales-entry-template.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
   
   onMounted(async () => {
     salespeople.value = await apiFetchSalespeople();
