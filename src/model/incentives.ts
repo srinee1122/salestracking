@@ -33,6 +33,7 @@ export interface TargetAllocation {
   id: number;
   campaign_id: number;
   salesperson_id: number;
+  product_id: number, 
   target_quantity: number;
   base_reward: number;
   target_unit: string;

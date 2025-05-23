@@ -105,7 +105,7 @@ tx.execute(
         "CREATE TABLE IF NOT EXISTS target_tiers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_id INTEGER NOT NULL,
-            min_quantity INTEGER NOT NULL,
+            min_quantity REAL NOT NULL,
             multiplier REAL NOT NULL,
             reward_per_unit REAL NOT NULL,
             notes TEXT,

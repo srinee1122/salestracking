@@ -36,7 +36,6 @@ pub fn add_target_campaign(
             campaign.name,
             campaign.brand,
             campaign.start_date,
-            
             campaign.end_date
         ],
     )
@@ -76,6 +75,7 @@ pub fn get_target_campaigns(
 pub struct TargetAllocationPayload {
     pub campaign_id: i32,
     pub salesperson_id: i32,
+    pub product_id: i32,
     pub target_quantity: i32,
     pub base_reward: f64,
     pub target_unit: String,
@@ -88,15 +88,15 @@ pub fn add_target_allocation(
 ) -> Result<(), String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO target_allocations (campaign_id, salesperson_id, target_quantity, base_reward, target_unit)
-         VALUES (?1, ?2, ?3, ?4,?5)",
+        "INSERT INTO target_allocations (campaign_id, salesperson_id, product_id, target_quantity, base_reward, target_unit)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![
             payload.campaign_id,
             payload.salesperson_id,
+            payload.product_id,
             payload.target_quantity,
             payload.base_reward,
             payload.target_unit,
-            
         ],
     )
     .map_err(|e| e.to_string())?;
@@ -106,8 +106,8 @@ pub fn add_target_allocation(
 #[derive(Debug, Deserialize)]
 pub struct TargetTierPayload {
     pub campaign_id: i32,
-    pub min_quantity: i32,
-    pub multiplier: f64, // ✅ Add this line
+    pub min_quantity: f64,
+    pub multiplier: f64,
     pub reward_per_unit: f64,
     pub notes: Option<String>,
 }
@@ -121,7 +121,7 @@ pub fn add_target_tier(
     conn.execute(
         "INSERT INTO target_tiers (campaign_id, min_quantity, multiplier, reward_per_unit, notes)
          VALUES (?1, ?2, ?3, ?4,?5)",
-        params![tier.campaign_id, tier.min_quantity,tier.multiplier, tier.reward_per_unit, tier.notes],
+        params![tier.campaign_id, tier.min_quantity, tier.multiplier, tier.reward_per_unit, tier.notes],
     )
     .map_err(|e| e.to_string())?;
     Ok(())
@@ -166,6 +166,7 @@ pub struct TargetAllocation {
     pub id: i32,
     pub campaign_id: i32,
     pub salesperson_id: i32,
+    pub product_id: i32,
     pub target_quantity: i32,
     pub base_reward: f64,
     pub target_unit: String, 
@@ -177,11 +178,9 @@ pub fn get_target_allocations(
     campaign_id: i32,
 ) -> Result<Vec<TargetAllocation>, String> {
     let conn = conn.lock().map_err(|e| e.to_string())?;
-    println!("🟢 Rust: get_target_allocations called with ID: {}", campaign_id);
-    println!("Rust received campaign_id = {}", campaign_id);
     let mut stmt = conn
         .prepare(
-            "SELECT id, campaign_id, salesperson_id, target_quantity, base_reward, target_unit
+            "SELECT id, campaign_id, salesperson_id, target_quantity, base_reward, target_unit, product_id
              FROM target_allocations
              WHERE campaign_id = ?1",
         )
@@ -196,6 +195,7 @@ pub fn get_target_allocations(
                 target_quantity: row.get(3)?,
                 base_reward: row.get(4)?,
                 target_unit: row.get(5)?,
+                product_id: row.get(6)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -212,7 +212,7 @@ pub fn get_target_allocations(
 pub struct TargetTier {
     pub id: i32,
     pub campaign_id: i32,
-    pub min_quantity: i32,
+    pub min_quantity: f64,
     pub multiplier: f64,
     pub reward_per_unit: f64,
     pub notes: Option<String>,
@@ -292,4 +292,30 @@ pub fn get_products_for_campaign(
     }
 
     Ok(result)
+}
+
+#[tauri::command]
+pub fn get_achieved_quantity_for_target(
+    conn: State<'_, Mutex<Connection>>,
+    campaign_id: i32,
+    salesperson_id: i32,
+    product_id: i32,
+    start_date: String,
+    end_date: String,
+) -> Result<i32, String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+
+    let mut stmt = conn.prepare(
+        "SELECT COALESCE(SUM(quantity), 0) FROM sales 
+         WHERE salesperson_id = ?1 
+         AND product_id = ?2 
+         AND date BETWEEN ?3 AND ?4"
+    ).map_err(|e| e.to_string())?;
+
+    let total: i32 = stmt.query_row(
+        params![salesperson_id, product_id, start_date, end_date],
+        |row| row.get(0),
+    ).map_err(|e| e.to_string())?;
+
+    Ok(total)
 }

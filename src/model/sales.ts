@@ -65,6 +65,36 @@ export async function apiDeleteSaleEntry(id: number): Promise<void> {
     console.error("❌ API Error deleting sale entries:", error);
     throw new Error(String(error));
   }
+}
 
+export async function apiGetAchievedQuantityForTarget(
+  campaignId: number,
+  salespersonId: number,
+  productId: number,
+  startDate: string,
+  endDate: string
+): Promise<number> {
+  console.log("API: Fetching achieved quantity...", {
+    campaignId,
+    salespersonId,
+    productId,
+    startDate,
+    endDate,
+  });
 
+  try {
+    const result = await invoke<number>("get_achieved_quantity_for_target", {
+      campaignId,
+      salespersonId,
+      productId,
+      startDate,
+      endDate,
+    });
+
+    console.log("✅ Achieved quantity:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ API Error fetching achieved quantity:", error);
+    return 0; // Safe fallback
+  }
 }

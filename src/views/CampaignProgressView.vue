@@ -7,6 +7,19 @@
       <p class="text-sm text-gray-600">{{ campaign.start_date }} to {{ campaign.end_date }}</p>
     </div>
 
+    <!-- 📊 Campaign Summary -->
+    <section v-if="campaign" class="bg-blue-50 p-4 rounded-lg shadow mb-6 border border-blue-200">
+      <h2 class="text-lg font-semibold text-blue-800 mb-2">📊 Campaign Summary</h2>
+      <ul class="text-sm text-gray-700 list-disc list-inside">
+        <li><strong>Campaign:</strong> {{ campaign.name }} ({{ campaign.brand }})</li>
+        <li><strong>Duration:</strong> {{ campaign.start_date }} to {{ campaign.end_date }}</li>
+        <li><strong>Total Products Involved:</strong> {{ campaignProducts.length }}</li>
+        <li><strong>Salespeople Covered:</strong> {{ salespeople.length }}</li>
+        <li><strong>Total Target Assignments:</strong> {{ allocations.length }}</li>
+        <li><strong>Tiers Defined:</strong> {{ tiers.length }} tier(s)</li>
+      </ul>
+    </section>
+
     <table class="min-w-full bg-white border rounded shadow">
       <thead>
         <tr class="bg-gray-100 text-left text-sm font-semibold text-gray-700">
@@ -19,11 +32,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="row in progress"
-          :key="`${row.salesperson_id}-${row.product_id}`"
-          class="border-t"
-        >
+        <tr v-for="row in progress" :key="`${row.salesperson_id}-${row.product_id}`" class="border-t">
           <td class="p-3">{{ row.salesperson_name }}</td>
           <td class="p-3">{{ row.product_name }}</td>
           <td class="p-3">{{ row.target_quantity }} ({{ row.target_unit }})</td>
@@ -77,7 +86,12 @@ import { apiFetchProducts } from '@/model/products';
 
 const route = useRoute();
 const campaign_id = parseInt(route.params.id as string);
+
 const campaign = ref<any>(null);
+const allocations = ref<any[]>([]);
+const salespeople = ref<any[]>([]);
+const campaignProducts = ref<any[]>([]);
+const tiers = ref<any[]>([]);
 const progress = ref<any[]>([]);
 
 const incentiveSummary = computed(() => {
@@ -95,59 +109,65 @@ onMounted(async () => {
   const campaigns = await apiGetCampaigns();
   campaign.value = campaigns.find((c) => c.id === campaign_id);
 
-  const allocations = await apiGetTargetAllocations(campaign_id);
-  const tiers = await apiGetTargetTiers(campaign_id);
+  allocations.value = await apiGetTargetAllocations(campaign_id);
+  salespeople.value = await apiFetchSalespeople();
+  campaignProducts.value = await apiGetProductsForCampaign(campaign_id);
+  tiers.value = await apiGetTargetTiers(campaign_id);
   const sales = await apiFetchSaleEntries();
-  const salespeople = await apiFetchSalespeople();
-  const campaignProducts = await apiGetProductsForCampaign(campaign_id);
   const allProducts = await apiFetchProducts();
 
   const rows: any[] = [];
 
-  for (const alloc of allocations) {
-    for (const product of campaignProducts) {
-      const productMeta = allProducts.find((p) => p.id === product.product_id);
-      const cartonSize = productMeta?.carton_size || 1;
+  for (const alloc of allocations.value) {
+    const product = campaignProducts.value.find((p) => p.product_id === alloc.product_id);
+    if (!product) continue;
 
-      const productSales = sales.filter(
-        (s) =>
-          s.salesperson_id === alloc.salesperson_id &&
-          s.product_id === product.product_id &&
-          s.date >= campaign.value.start_date &&
-          s.date <= campaign.value.end_date
-      );
+    const productMeta = allProducts.find((p) => p.id === alloc.product_id);
+    const cartonSize = productMeta?.carton_size || 1;
 
-      const totalQty = productSales.reduce((sum, s) => {
-        if (alloc.target_unit === 'cartons' && s.unit_type === 'pieces') {
-          return sum + s.quantity / cartonSize;
-        }
+    const productSales = sales.filter(
+      (s) =>
+        s.salesperson_id === alloc.salesperson_id &&
+        s.product_id === alloc.product_id &&
+        s.date >= campaign.value.start_date &&
+        s.date <= campaign.value.end_date
+    );
+
+    const totalQty = productSales.reduce((sum, s) => {
+      if (alloc.target_unit === 'pieces' && s.unit_type === 'cartons') {
+        return sum + s.quantity * cartonSize;
+      } else if (alloc.target_unit === 'cartons' && s.unit_type === 'pieces') {
+        return sum + s.quantity / cartonSize;
+      } else {
         return sum + s.quantity;
-      }, 0);
+      }
+    }, 0);
 
-      const matchedTier = [...tiers].reverse().find((tier) => {
-        const threshold = tier.multiplier * alloc.target_quantity;
-        return totalQty >= threshold;
-      });
+    const matchedTier = [...tiers.value].reverse().find((tier) => {
+      const threshold = tier.multiplier * alloc.target_quantity;
+      return totalQty >= threshold;
+    });
 
-      let rewardPerUnit = matchedTier?.reward_per_unit || (totalQty >= alloc.target_quantity ? alloc.base_reward : 0);
-      const totalReward = rewardPerUnit * totalQty;
-      const percent = Math.round((totalQty / alloc.target_quantity) * 100);
+    let rewardPerUnit =
+      matchedTier?.reward_per_unit || (totalQty >= alloc.target_quantity ? alloc.base_reward : 0);
 
-      rows.push({
-        salesperson_id: alloc.salesperson_id,
-        salesperson_name: salespeople.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
-        product_id: product.product_id,
-        product_name: product.product_name,
-        target_quantity: alloc.target_quantity,
-        achieved_quantity: totalQty,
-        base_reward: alloc.base_reward,
-        multiplier: matchedTier?.multiplier || 1,
-        tier_label: matchedTier?.notes || 'Base',
-        total_reward: totalReward,
-        progress_percent: percent,
-        target_unit: alloc.target_unit || 'pieces',
-      });
-    }
+    const totalReward = rewardPerUnit * totalQty;
+    const percent = Math.round((totalQty / alloc.target_quantity) * 100);
+
+    rows.push({
+      salesperson_id: alloc.salesperson_id,
+      salesperson_name: salespeople.value.find((sp) => sp.id === alloc.salesperson_id)?.name || 'Unknown',
+      product_id: alloc.product_id,
+      product_name: product.product_name,
+      target_quantity: alloc.target_quantity,
+      achieved_quantity: totalQty,
+      base_reward: alloc.base_reward,
+      multiplier: matchedTier?.multiplier || 1,
+      tier_label: matchedTier?.notes || 'Base',
+      total_reward: totalReward,
+      progress_percent: percent,
+      target_unit: alloc.target_unit || 'pieces',
+    });
   }
 
   progress.value = rows;
@@ -158,10 +178,15 @@ onMounted(async () => {
 .animate-pulse {
   animation: pulse 1s infinite;
 }
-
 @keyframes pulse {
-  0% { box-shadow: 0 0 5px #22c55e; }
-  50% { box-shadow: 0 0 20px rgb(197, 194, 34); }
-  100% { box-shadow: 0 0 5px #22c55e; }
+  0% {
+    box-shadow: 0 0 5px #22c55e;
+  }
+  50% {
+    box-shadow: 0 0 20px rgb(197, 194, 34);
+  }
+  100% {
+    box-shadow: 0 0 5px #22c55e;
+  }
 }
 </style>
