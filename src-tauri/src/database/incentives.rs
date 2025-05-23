@@ -319,3 +319,21 @@ pub fn get_achieved_quantity_for_target(
 
     Ok(total)
 }
+
+#[tauri::command]
+pub fn archive_campaign(conn: State<'_, Mutex<Connection>>, campaign_id: i32) -> Result<(), String> {
+    let conn = conn.lock().map_err(|e| e.to_string())?;
+    conn.execute("UPDATE target_campaigns SET is_active = 0 WHERE id = ?1", [campaign_id])
+        .map_err(|e| format!("Failed to archive campaign: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_campaign(campaign_id: i32, state: State<Mutex<Connection>>) -> Result<(), String> {
+    let conn = state.lock().map_err(|_| "Failed to lock DB connection".to_string())?;
+
+    conn.execute("DELETE FROM campaigns WHERE id = ?1", params![campaign_id])
+        .map_err(|e| format!("Failed to delete campaign: {}", e))?;
+
+    Ok(())
+}

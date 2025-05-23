@@ -66,6 +66,13 @@ async function loadActiveCampaigns() {
   activeCampaigns.value = all.filter(c => c.is_active);
 }
 
+async function archiveCampaign(id: number) {
+  if (confirm('Archive this campaign?')) {
+    await invoke('archive_campaign', { campaignId: id });
+    campaigns.value = campaigns.value.filter(c => c.id !== id);
+  }
+}
+
 onMounted(loadActiveCampaigns);
 </script>
 
